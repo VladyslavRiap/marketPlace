@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 
-exports.createUser = async (email, hashedPassword) => {
+const createUser = async (email, hashedPassword, role = "buyer") => {
   try {
     const existingUser = await pool.query(
       "SELECT * FROM users WHERE email = $1",
@@ -11,8 +11,8 @@ exports.createUser = async (email, hashedPassword) => {
     }
 
     const result = await pool.query(
-      "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email",
-      [email, hashedPassword]
+      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id, email, role",
+      [email, hashedPassword, role]
     );
 
     return result.rows[0];
@@ -22,7 +22,7 @@ exports.createUser = async (email, hashedPassword) => {
   }
 };
 
-exports.findByEmail = async (email) => {
+const findByEmail = async (email) => {
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
       email,
@@ -33,3 +33,5 @@ exports.findByEmail = async (email) => {
     throw error;
   }
 };
+
+module.exports = { createUser, findByEmail };

@@ -1,6 +1,7 @@
 const express = require("express");
 const productController = require("../controllers/product.controller");
-
+const authMiddleware = require("../middlewares/auth.middleware");
+const checkRole = require("../middlewares/role.middleware");
 const router = express.Router();
 /**
  * @swagger
@@ -87,6 +88,11 @@ router.get("/", productController.getProducts);
  *       500:
  *         description: Server error
  */
-router.post("/", productController.addProduct);
+router.post(
+  "/",
+  authMiddleware,
+  checkRole(["admin", "seller"]),
+  productController.addProduct
+);
 
 module.exports = router;

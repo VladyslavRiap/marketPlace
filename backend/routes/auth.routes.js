@@ -20,12 +20,17 @@ const router = express.Router();
  *                 type: string
  *               password:
  *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [buyer, seller, admin]
+ *                 default: buyer
  *     responses:
  *       200:
  *         description: Successful registration
  *       400:
  *         description: Bad request
  */
+
 router.post("/register", register);
 
 /**
