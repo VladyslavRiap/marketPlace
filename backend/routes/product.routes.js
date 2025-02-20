@@ -73,7 +73,21 @@ router.get("/", productController.getProducts);
  *                 example: 199.99
  *               category:
  *                 type: string
- *                 example: "shoes"
+ *                 enum:
+ *                   - "Phones, tablets and laptops"
+ *                   - "Computers and peripheral devices"
+ *                   - "TV, audio and photo"
+ *                   - "Game"
+ *                   - "Large electrical appliances"
+ *                   - "Small electrical appliances"
+ *                   - "Fashion"
+ *                   - "Health and Beauty"
+ *                   - "Home, Garden and Pet Shop"
+ *                   - "Toys and children’s products"
+ *                   - "Sports and Leisure"
+ *                   - "Auto and DIY"
+ *                   - "Books, office and food"
+ *                 example: "Fashion"
  *               description:
  *                 type: string
  *                 example: "Comfortable running shoes"
@@ -88,11 +102,6 @@ router.get("/", productController.getProducts);
  *       500:
  *         description: Server error
  */
-router.post(
-  "/",
-  authMiddleware,
-  checkRole(["admin", "seller"]),
-  productController.addProduct
-);
+router.post("/", productController.addProduct);
 
 module.exports = router;
