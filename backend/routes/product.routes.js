@@ -102,6 +102,11 @@ router.get("/", productController.getProducts);
  *       500:
  *         description: Server error
  */
-router.post("/", productController.addProduct);
+router.post(
+  "/",
+  authMiddleware,
+  checkRole(["admin", "seller"]),
+  productController.addProduct
+);
 
 module.exports = router;

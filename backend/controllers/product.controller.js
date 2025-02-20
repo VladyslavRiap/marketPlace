@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 
-const validCategories = [
+const categories = [
   "Phones, tablets and laptops",
   "Computers and peripheral devices",
   "TV, audio and photo",
@@ -35,19 +35,20 @@ exports.getProducts = async (req, res) => {
     const result = await pool.query(query, values);
     res.json(result.rows);
   } catch (error) {
-    console.error("Не удалось получить продукты", error.message);
-    res.status(500).json({ error: "Не удалось получить продукты" });
+    console.error("Cannot recive products", error.message);
+    res.status(500).json({ error: "Cannot recive products" });
   }
 };
+
 exports.addProduct = async (req, res) => {
   const { name, price, category, description, image_url } = req.body;
 
   if (!name || !price) {
-    return res.status(400).json({ error: "Name and price are required" });
+    return res.status(400).json({ error: "Name and price is required" });
   }
 
-  if (category && !validCategories.includes(category)) {
-    return res.status(400).json({ error: "Invalid category" });
+  if (!categories.includes(category)) {
+    return res.status(400).json({ error: "Category not exsists" });
   }
 
   try {
@@ -57,7 +58,7 @@ exports.addProduct = async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error("Error adding item:", error.message);
+    console.error("Error with add ne product:", error.message);
     res.status(500).json({ error: "Server error" });
   }
 };
