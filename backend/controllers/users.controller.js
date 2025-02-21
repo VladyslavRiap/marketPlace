@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 exports.getCurrentUser = async (req, res) => {
   try {
     const user = await pool.query(
-      "SELECT id, email, role FROM users WHERE id = $1",
+      "SELECT id, email, role,name FROM users WHERE id = $1",
       [req.user.userId]
     );
     if (!user.rows.length) {
@@ -65,7 +65,9 @@ exports.changePassword = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await pool.query("SELECT id, email, role FROM users");
+    const users = await pool.query(
+      "SELECT id, email,is_blocked,name ,role FROM users"
+    );
     res.json(users.rows);
   } catch (error) {
     res.status(500).json({ error: "Server error" });
