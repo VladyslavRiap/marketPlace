@@ -1,5 +1,10 @@
 const express = require("express");
-const { register, login } = require("../controllers/auth.controller");
+const {
+  register,
+  login,
+  refreshToken,
+  logout,
+} = require("../controllers/auth.controller");
 
 const router = express.Router();
 
@@ -30,7 +35,6 @@ const router = express.Router();
  *       400:
  *         description: Bad request
  */
-
 router.post("/register", register);
 
 /**
@@ -57,5 +61,51 @@ router.post("/register", register);
  *         description: Invalid credentials
  */
 router.post("/login", login);
+
+/**
+ * @swagger
+ * /api/auth/refresh-token:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: New access token issued
+ *       403:
+ *         description: Invalid refresh token
+ */
+router.post("/refresh-token", refreshToken);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: User logout
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ *       400:
+ *         description: Refresh token is required
+ */
+router.post("/logout", logout);
 
 module.exports = router;
