@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const cartController = require("../controllers/cart.controller");
-const authMiddleware = require("../middlewares/auth.middleware"); // Authorization check
+const authMiddleware = require("../middlewares/auth.middleware");
 
 /**
  * @swagger
@@ -95,5 +95,17 @@ router.delete("/", authMiddleware, cartController.removeFromCart);
  *         description: Product not found in the cart
  */
 router.post("/update", authMiddleware, cartController.updateQuantityInCart);
+
+/**
+ * @swagger
+ * /api/cart/clear:
+ *   delete:
+ *     summary: Clear the cart
+ *     tags: [Cart]
+ *     responses:
+ *       200:
+ *         description: Cart cleared successfully
+ */
+router.delete("/clear", authMiddleware, cartController.clearCart);
 
 module.exports = router;

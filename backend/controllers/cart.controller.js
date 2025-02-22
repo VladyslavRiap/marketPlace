@@ -104,3 +104,15 @@ exports.updateQuantityInCart = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+exports.clearCart = async (req, res) => {
+  const { userId } = req.user;
+
+  try {
+    await pool.query("DELETE FROM cart_items WHERE user_id = $1", [userId]);
+    res.json({ message: "Cart cleared successfully" });
+  } catch (error) {
+    console.error("Error clearing cart:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+};
