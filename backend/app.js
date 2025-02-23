@@ -9,6 +9,7 @@ const usersRoutes = require("./routes/users.routes");
 const reviewRoutes = require("./routes/review.routes");
 const adminRoutes = require("./routes/admin.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const favoriteRoutes = require("./routes/favorite.routes");
 const app = express();
 
 app.use(cors());
@@ -22,6 +23,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/favorites", favoriteRoutes);
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url} - ${JSON.stringify(req.body)}`);
   next();
