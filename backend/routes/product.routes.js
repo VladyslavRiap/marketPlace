@@ -44,15 +44,18 @@ const router = express.Router();
  *                     type: number
  *                   category:
  *                     type: string
+ *                   rating:
+ *                     type: number
  *       500:
  *         description: Server error
  */
 router.get("/", productController.getProducts);
+
 /**
  * @swagger
  * /api/products/search:
  *   get:
- *     summary: Search products
+ *     summary: Search products by keyword
  *     tags: [Products]
  *     parameters:
  *       - in: query
@@ -70,6 +73,18 @@ router.get("/", productController.getProducts);
  *         schema:
  *           type: integer
  *         description: Number of products per page (default is 10)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [price, rating, name]
+ *         description: Sort by field (price, rating, name)
+ *       - in: query
+ *         name: order
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sort order (asc or desc)
  *     responses:
  *       200:
  *         description: List of products matching the search query
@@ -88,10 +103,75 @@ router.get("/", productController.getProducts);
  *                     type: number
  *                   category:
  *                     type: string
+ *                   rating:
+ *                     type: number
  *       500:
  *         description: Server error
  */
 router.get("/search", productController.searchProducts);
+
+/**
+ * @swagger
+ * /api/products/filter:
+ *   get:
+ *     summary: Filter products by category, price, rating, etc.
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price
+ *       - in: query
+ *         name: rating
+ *         schema:
+ *           type: number
+ *         description: Filter by rating
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number (default is 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of products per page (default is 10)
+ *     responses:
+ *       200:
+ *         description: List of filtered products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   price:
+ *                     type: number
+ *                   category:
+ *                     type: string
+ *                   rating:
+ *                     type: number
+ *       500:
+ *         description: Server error
+ */
+router.get("/filter", productController.filterProducts);
+
 /**
  * @swagger
  * /api/products/{id}:
@@ -121,6 +201,8 @@ router.get("/search", productController.searchProducts);
  *                   type: number
  *                 category:
  *                   type: string
+ *                 rating:
+ *                   type: number
  *       404:
  *         description: Product not found
  *       500:
@@ -152,20 +234,6 @@ router.get("/:id", productController.getProductById);
  *                 example: 199.99
  *               category:
  *                 type: string
- *                 enum:
- *                   - "Phones, tablets and laptops"
- *                   - "Computers and peripheral devices"
- *                   - "TV, audio and photo"
- *                   - "Game"
- *                   - "Large electrical appliances"
- *                   - "Small electrical appliances"
- *                   - "Fashion"
- *                   - "Health and Beauty"
- *                   - "Home, Garden and Pet Shop"
- *                   - "Toys and children’s products"
- *                   - "Sports and Leisure"
- *                   - "Auto and DIY"
- *                   - "Books, office and food"
  *                 example: "Fashion"
  *               description:
  *                 type: string
@@ -173,6 +241,9 @@ router.get("/:id", productController.getProductById);
  *               image_url:
  *                 type: string
  *                 example: "https://example.com/image.jpg"
+ *               rating:
+ *                 type: number
+ *                 example: 4.5
  *     responses:
  *       201:
  *         description: Product successfully added
@@ -223,6 +294,9 @@ router.post(
  *               image_url:
  *                 type: string
  *                 example: "https://example.com/image.jpg"
+ *               rating:
+ *                 type: number
+ *                 example: 4.5
  *     responses:
  *       200:
  *         description: Product successfully updated

@@ -4,19 +4,27 @@ exports.addReview = async (req, res) => {
   const { userId } = req.user;
   const { productId, rating, comment } = req.body;
 
-  if (!productId || !rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ error: "Invalid input data" });
+  if (!productId || rating === undefined || rating < 0 || rating > 5) {
+    return res.status(400).json({ error: "Rating must be between 0 and 5" });
   }
 
   try {
-    const result = await pool.query(
+    await pool.query(
       `INSERT INTO reviews (user_id, product_id, rating, comment)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
+       VALUES ($1, $2, $3, $4)`,
       [userId, productId, rating, comment]
     );
 
-    res.status(201).json(result.rows[0]);
+    await pool.query(
+      `UPDATE products
+       SET rating = (
+         SELECT ROUND(AVG(rating), 1) FROM reviews WHERE product_id = $1
+       )
+       WHERE id = $1`,
+      [productId]
+    );
+
+    res.status(201).json({ message: "Review added and rating updated" });
   } catch (error) {
     console.error("Error adding review:", error.message);
     res.status(500).json({ error: "Server error" });

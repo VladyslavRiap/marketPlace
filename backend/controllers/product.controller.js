@@ -16,39 +16,100 @@ const categories = [
   "Books, office and food",
 ];
 
-exports.getProducts = async (req, res) => {
-  const { page = 1, limit = 10, category } = req.query;
-  const offset = (page - 1) * limit;
+const fabricGetMethod = (baseQuery, hasFilters = false) => {
+  return async (req, res) => {
+    const {
+      page = 1,
+      limit = 10,
+      query,
+      category,
+      minPrice,
+      maxPrice,
+      rating,
+      sortBy = "id",
+      order = "asc",
+    } = req.query;
 
-  try {
-    let query =
-      "SELECT id, name, price, category, description, image_url, user_id FROM products";
-    let values = [];
+    const parsedPage = parseInt(page, 10);
+    const parsedLimit = parseInt(limit, 10);
+    const parsedRating = rating ? parseFloat(rating) : null;
 
-    if (category) {
-      query += " WHERE category = $1";
-      values.push(category);
+    if (
+      isNaN(parsedPage) ||
+      isNaN(parsedLimit) ||
+      parsedPage < 1 ||
+      parsedLimit < 1
+    ) {
+      return res.status(400).json({ error: "Invalid page or limit value" });
     }
 
-    query += ` LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
-    values.push(limit, offset);
+    if (
+      rating &&
+      (isNaN(parsedRating) || parsedRating < 0 || parsedRating > 5)
+    ) {
+      return res.status(400).json({ error: "Rating must be between 0 and 5" });
+    }
 
-    const result = await pool.query(query, values);
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Cannot receive products", error.message);
-    res.status(500).json({ error: "Cannot receive products" });
-  }
+    const offset = (parsedPage - 1) * parsedLimit;
+    let queryText = baseQuery;
+    let values = [];
+    let valueIndex = 1;
+
+    if (hasFilters) {
+      if (category) {
+        queryText += ` AND category = $${valueIndex++}`;
+        values.push(category);
+      }
+      if (minPrice) {
+        queryText += ` AND price >= $${valueIndex++}`;
+        values.push(minPrice);
+      }
+      if (maxPrice) {
+        queryText += ` AND price <= $${valueIndex++}`;
+        values.push(maxPrice);
+      }
+      if (parsedRating !== null) {
+        queryText += ` AND rating >= $${valueIndex++}`;
+        values.push(parsedRating);
+      }
+      if (query) {
+        queryText += ` AND (name ILIKE $${valueIndex} OR description ILIKE $${valueIndex})`;
+        values.push(`%${query}%`);
+      }
+    }
+
+    const allowedSortFields = ["id", "name", "price", "rating"];
+    const allowedOrder = ["asc", "desc"];
+
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "id";
+    const sortOrder = allowedOrder.includes(order.toLowerCase())
+      ? order.toUpperCase()
+      : "ASC";
+
+    queryText += ` ORDER BY ${sortField} ${sortOrder}`;
+
+    queryText += ` LIMIT $${valueIndex} OFFSET $${valueIndex + 1}`;
+    values.push(parsedLimit, offset);
+
+    try {
+      const result = await pool.query(queryText, values);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error executing query:", error.message);
+      res.status(500).json({ error: "Server error" });
+    }
+  };
 };
+
+exports.getProducts = fabricGetMethod("SELECT * FROM products WHERE 1=1", true);
 
 exports.getProductById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query(
-      "SELECT id, name, price, category, description, image_url, user_id FROM products WHERE id = $1",
-      [id]
-    );
+    const result = await pool.query("SELECT * FROM products WHERE id = $1", [
+      id,
+    ]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Product not found" });
     }
@@ -73,7 +134,7 @@ exports.addProduct = async (req, res) => {
 
   try {
     const result = await pool.query(
-      "INSERT INTO products (name, price, category, description, image_url, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      "INSERT INTO products (name, price, category, description, image_url, user_id) VALUES ($1, $2, $3, $4, $5, $6 ) RETURNING *",
       [name, price, category, description, image_url, userId]
     );
     res.status(201).json(result.rows[0]);
@@ -82,6 +143,7 @@ exports.addProduct = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 exports.updateProduct = async (req, res) => {
   const { id } = req.params;
   const { name, price, category, description, image_url } = req.body;
@@ -143,11 +205,7 @@ exports.deleteProduct = async (req, res) => {
         .json({ error: "You are not authorized to delete this product" });
     }
 
-    const result = await pool.query(
-      "DELETE FROM products WHERE id = $1 RETURNING *",
-      [id]
-    );
-
+    await pool.query("DELETE FROM products WHERE id = $1", [id]);
     res.json({ message: "Product successfully deleted" });
   } catch (error) {
     console.error("Error deleting product:", error.message);
@@ -155,41 +213,12 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-exports.searchProducts = async (req, res) => {
-  const { query, page = 1, limit = 10 } = req.query;
-  const parsedPage = parseInt(page, 10);
-  const parsedLimit = parseInt(limit, 10);
+exports.searchProducts = fabricGetMethod(
+  "SELECT * FROM products WHERE 1=1",
+  true
+);
 
-  if (
-    isNaN(parsedPage) ||
-    isNaN(parsedLimit) ||
-    parsedPage < 1 ||
-    parsedLimit < 1
-  ) {
-    return res.status(400).json({ error: "Invalid page or limit value" });
-  }
-
-  const offset = (parsedPage - 1) * parsedLimit;
-
-  if (!query) {
-    return res.status(400).json({ error: "Search query is required" });
-  }
-
-  try {
-    const searchQuery = `
-      SELECT * FROM products 
-      WHERE name ILIKE $1 
-      OR description ILIKE $1 
-      OR category ILIKE $1 
-      LIMIT $2 OFFSET $3
-    `;
-
-    const values = [`%${query}%`, parsedLimit, offset];
-
-    const result = await pool.query(searchQuery, values);
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Error searching products:", error.message);
-    res.status(500).json({ error: "Cannot receive product" });
-  }
-};
+exports.filterProducts = fabricGetMethod(
+  "SELECT * FROM products WHERE 1=1",
+  true
+);
