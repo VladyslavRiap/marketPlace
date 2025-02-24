@@ -1,64 +1,62 @@
-const pool = require("../config/db");
-const bcrypt = require("bcryptjs");
+const UserModel = require("../models/UserModel");
 
-exports.getCurrentUser = async (req, res) => {
-  try {
-    const user = await pool.query(
-      "SELECT id, email, role, name FROM users WHERE id = $1",
-      [req.user.userId]
-    );
-    if (!user.rows.length) {
-      return res.status(404).json({ error: "User not found" });
+class UserController {
+  static async getCurrentUser(req, res) {
+    try {
+      const user = await UserModel.findById(req.user.userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error.message);
+      res.status(500).json({ error: "Server error" });
     }
-    res.json(user.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: "Server error" });
-  }
-};
-
-exports.updateUserProfile = async (req, res) => {
-  const { name } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ error: "Name is required" });
   }
 
-  try {
-    const updatedUser = await pool.query(
-      "UPDATE users SET name = $1 WHERE id = $2 RETURNING id, email, name, role",
-      [name, req.user.userId]
-    );
+  static async updateUserProfile(req, res) {
+    const { name } = req.body;
 
-    res.json(updatedUser.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: "Server error" });
-  }
-};
-
-exports.changePassword = async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
-
-  try {
-    const user = await pool.query("SELECT password FROM users WHERE id = $1", [
-      req.user.userId,
-    ]);
-    if (!user.rows.length) {
-      return res.status(404).json({ error: "User not found" });
+    if (!name) {
+      return res.status(400).json({ error: "Name is required" });
     }
 
-    const isMatch = await bcrypt.compare(oldPassword, user.rows[0].password);
-    if (!isMatch) {
-      return res.status(400).json({ error: "Old password is incorrect" });
+    try {
+      const updatedUser = await UserModel.updateUserName(req.user.userId, name);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user profile:", error.message);
+      res.status(500).json({ error: "Server error" });
     }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await pool.query("UPDATE users SET password = $1 WHERE id = $2", [
-      hashedPassword,
-      req.user.userId,
-    ]);
-
-    res.json({ message: "Password updated successfully" });
-  } catch (error) {
-    res.status(500).json({ error: "Server error" });
   }
-};
+
+  static async changePassword(req, res) {
+    const { oldPassword, newPassword } = req.body;
+
+    try {
+      const result = await UserModel.updatePassword(
+        req.user.userId,
+        oldPassword,
+        newPassword
+      );
+      res.json(result);
+    } catch (error) {
+      console.error("Error changing password:", error.message);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  static async register(req, res) {
+    const { email, password, role = "buyer" } = req.body;
+
+    try {
+      const user = await UserModel.createUser(email, password, role);
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error during registration:", error.message);
+      res.status(400).json({ error: error.message });
+    }
+  }
+}
+
+module.exports = UserController;
