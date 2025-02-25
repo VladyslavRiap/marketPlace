@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const queries = require("../queries/product.queries");
 
+const uploadFile = require("../services/s3");
 class ProductController {
   static fabricGetMethod(baseQuery, hasFilters = false) {
     return async (req, res) => {
@@ -104,22 +105,39 @@ class ProductController {
   }
 
   static async addProduct(req, res) {
-    const { name, price, category, description, image_url } = req.body;
-
-    const userId = req.user.userId;
-    if (!name || !price) {
-      return res.status(400).json({ error: "Name and price are required" });
-    }
-
     try {
+      const { name, price, category, description, image_url } = req.body;
+      const userId = req.user.userId;
+
+      if (!name || !price) {
+        return res.status(400).json({ error: "Name and price are required" });
+      }
+
+      let uploadedImageUrl = image_url || null;
+
+      if (req.file) {
+        if (!req.file.mimetype.startsWith("image/")) {
+          return res
+            .status(400)
+            .json({ error: "Only image files are allowed" });
+        }
+
+        uploadedImageUrl = await uploadFile(
+          "marketplace-my-1-2-3-4",
+          req.file.originalname,
+          req.file.buffer
+        );
+      }
+
       const result = await pool.query(queries.INSERT_PRODUCT, [
         name,
         price,
         category,
         description,
-        image_url,
+        uploadedImageUrl,
         userId,
       ]);
+
       res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error("Error adding new product:", error.message);

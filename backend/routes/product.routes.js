@@ -3,7 +3,26 @@ const productController = require("../controllers/product.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 const checkRole = require("../middlewares/role.middleware");
 const router = express.Router();
+const multer = require("multer");
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"), false);
+    }
+  },
+});
 
+router.post(
+  "/",
+  authMiddleware,
+  checkRole(["admin", "seller"]),
+  upload.single("image"),
+  productController.addProduct
+);
 /**
  * @swagger
  * /api/products:
@@ -216,10 +235,12 @@ router.get("/:id", productController.getProductById);
  *   post:
  *     summary: Add a new product
  *     tags: [Products]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -238,12 +259,10 @@ router.get("/:id", productController.getProductById);
  *               description:
  *                 type: string
  *                 example: "Comfortable running shoes"
- *               image_url:
+ *               image:
  *                 type: string
- *                 example: "https://example.com/image.jpg"
- *               rating:
- *                 type: number
- *                 example: 4.5
+ *                 format: binary
+ *                 description: Image file to upload
  *     responses:
  *       201:
  *         description: Product successfully added
@@ -256,6 +275,7 @@ router.post(
   "/",
   authMiddleware,
   checkRole(["admin", "seller"]),
+  upload.single("image"),
   productController.addProduct
 );
 

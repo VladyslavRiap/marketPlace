@@ -71,7 +71,7 @@ class AuthController {
       );
 
       const refreshToken = jwt.sign(
-        { userId: user.id, role: user.role },
+        { userId: user.id },
         process.env.JWT_REFRESH_SECRET,
         { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
@@ -123,6 +123,14 @@ class AuthController {
     }
 
     try {
+      const tokenExists = await pool.query(queries.GET_REFRESH_TOKEN, [
+        refreshToken,
+      ]);
+
+      if (tokenExists.rows.length === 0) {
+        return res.status(403).json({ error: "Invalid refresh token" });
+      }
+
       await pool.query(queries.DELETE_REFRESH_TOKEN, [refreshToken]);
       res.json({ message: "Logged out successfully" });
     } catch (error) {
