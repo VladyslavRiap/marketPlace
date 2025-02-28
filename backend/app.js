@@ -10,10 +10,19 @@ const reviewRoutes = require("./routes/review.routes");
 const adminRoutes = require("./routes/admin.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const favoriteRoutes = require("./routes/favorite.routes");
+const cookieParser = require("cookie-parser");
+
 const app = express();
 
-app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Разрешаем запросы с фронтенда
+    credentials: true, // ВАЖНО: Разрешаем cookies
+  })
+);
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
 app.use("/api", reviewRoutes);

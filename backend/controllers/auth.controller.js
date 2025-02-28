@@ -3,8 +3,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { findByEmail } = require("../models/UserModel");
 const queries = require("../queries/auth.queries");
-const ACCESS_TOKEN_EXPIRES = "24h";
-const REFRESH_TOKEN_EXPIRES = "30d";
+
+const ACCESS_TOKEN_EXPIRES = "15m"; // 15 минут
+const REFRESH_TOKEN_EXPIRES = "7d"; // 7 дней
+
 class AuthController {
   static async register(req, res) {
     const { email, password, role = "buyer" } = req.body;
@@ -23,7 +25,6 @@ class AuthController {
         hashedPassword,
         role,
       ]);
-
       const user = result.rows[0];
 
       const accessToken = jwt.sign(
@@ -31,7 +32,6 @@ class AuthController {
         process.env.JWT_SECRET,
         { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
-
       const refreshToken = jwt.sign(
         { userId: user.id },
         process.env.JWT_REFRESH_SECRET,
@@ -40,9 +40,23 @@ class AuthController {
 
       await pool.query(queries.REFRESH_TOKEN, [user.id, refreshToken]);
 
-      res.json({ accessToken, refreshToken, user });
+      // Сохраняем токены в cookies
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: true, // Включите true в production
+        sameSite: "Strict",
+        maxAge: 15 * 60 * 1000, // 15 минут
+      });
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+      });
+
+      res.json({ user });
     } catch (error) {
-      console.error("Register error:", error.message);
       res.status(500).json({ error: "Server error" });
     }
   }
@@ -60,16 +74,11 @@ class AuthController {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      if (user.is_blocked) {
-        return res.status(403).json({ error: "Your account is blocked" });
-      }
-
       const accessToken = jwt.sign(
         { userId: user.id, role: user.role },
         process.env.JWT_SECRET,
         { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
-
       const refreshToken = jwt.sign(
         { userId: user.id },
         process.env.JWT_REFRESH_SECRET,
@@ -78,11 +87,29 @@ class AuthController {
 
       await pool.query(queries.REFRESH_TOKEN, [user.id, refreshToken]);
 
-      res.json({ accessToken, refreshToken });
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+        maxAge: 15 * 60 * 1000,
+      });
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.json({ user });
     } catch (error) {
-      console.error("Login error:", error.message);
-      res.status(500).json({ error: "Login error: " + error.message });
+      res.status(500).json({ error: "Login error" });
     }
+  }
+
+  static async logout(req, res) {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    res.json({ message: "Logged out successfully" });
   }
 
   static async refreshToken(req, res) {
@@ -114,29 +141,5 @@ class AuthController {
       return res.status(403).json({ error: "Invalid refresh token" });
     }
   }
-
-  static async logout(req, res) {
-    const { refreshToken } = req.body;
-
-    if (!refreshToken) {
-      return res.status(400).json({ error: "Refresh token is required" });
-    }
-
-    try {
-      const tokenExists = await pool.query(queries.GET_REFRESH_TOKEN, [
-        refreshToken,
-      ]);
-
-      if (tokenExists.rows.length === 0) {
-        return res.status(403).json({ error: "Invalid refresh token" });
-      }
-
-      await pool.query(queries.DELETE_REFRESH_TOKEN, [refreshToken]);
-      res.json({ message: "Logged out successfully" });
-    } catch (error) {
-      res.status(500).json({ error: "Logout error" });
-    }
-  }
 }
-
 module.exports = AuthController;
