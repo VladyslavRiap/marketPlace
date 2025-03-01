@@ -4,6 +4,7 @@ const authMiddleware = require("../middlewares/auth.middleware");
 const checkRole = require("../middlewares/role.middleware");
 const router = express.Router();
 const multer = require("multer");
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -331,6 +332,7 @@ router.put(
   "/:id",
   authMiddleware,
   checkRole(["admin", "seller"]),
+
   productController.updateProduct
 );
 

@@ -13,6 +13,14 @@ class UserModel {
     return result.rows[0] || null;
   }
 
+  static async updateUserAvatar(userId, avatarUrl) {
+    const result = await pool.query(queries.UPDATE_USER_AVATAR, [
+      avatarUrl,
+      userId,
+    ]);
+    return result.rows[0];
+  }
+
   static async createUser(email, password, role = "buyer") {
     const existingUser = await pool.query(queries.GET_USER_BY_EMAIL, [email]);
 

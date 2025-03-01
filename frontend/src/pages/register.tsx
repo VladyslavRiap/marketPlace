@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useAppDispatch } from "@/redux/hooks";
 import { registerUser } from "@/redux/slices/authSlice";
 import { useRouter } from "next/router";
+import Link from "next/link";
+import { useSnackbarContext } from "@/context/SnackBarContext";
 
 const RegisterPage = () => {
   const dispatch = useAppDispatch();
@@ -11,7 +13,7 @@ const RegisterPage = () => {
   const [form, setForm] = useState({ email: "", password: "", role: "buyer" });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
+  const { showMessage } = useSnackbarContext();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -23,7 +25,7 @@ const RegisterPage = () => {
         router.push("/profile");
       }
     } catch (err: any) {
-      setError(err || "Ошибка регистрации");
+      showMessage(err || "Ошибка регистрации", "error");
     } finally {
       setLoading(false);
     }
@@ -72,9 +74,9 @@ const RegisterPage = () => {
       </form>
       <p className="text-center mt-4">
         Уже есть аккаунт?{" "}
-        <a href="/login" className="text-blue-600 hover:underline">
+        <Link href="/login" className="text-blue-600 hover:underline">
           Войти
-        </a>
+        </Link>
       </p>
     </div>
   );

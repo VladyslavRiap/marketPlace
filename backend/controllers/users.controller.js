@@ -1,5 +1,5 @@
 const UserModel = require("../models/UserModel");
-
+const uploadFile = require("../services/s3");
 class UserController {
   static async getCurrentUser(req, res) {
     try {
@@ -13,6 +13,27 @@ class UserController {
       res.status(500).json({ error: "Server error" });
     }
   }
+  static async updateAvatar(req, res) {
+    if (!req.file) {
+      return res.status(400).json({ error: "Файл не загружен" });
+    }
+
+    try {
+      const folder = "avatars";
+      const uploadedImageUrl = await uploadFile(
+        "marketplace-my-1-2-3-4",
+        req.file.originalname,
+        req.file.buffer
+      );
+
+      await UserModel.updateUserAvatar(req.user.userId, uploadedImageUrl);
+      res.json({ avatarUrl: uploadedImageUrl });
+    } catch (error) {
+      console.error("Ошибка загрузки аватара:", error);
+      res.status(500).json({ error: "Ошибка загрузки аватара" });
+    }
+  }
+
   static async updateMobileNumber(req, res) {
     const { mobnumber } = req.body;
 

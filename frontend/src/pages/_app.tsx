@@ -5,14 +5,20 @@ import "../styles/globals.css";
 import Layout from "@/components/Layout";
 
 import AppInitializer from "@/components/AppInitializer";
+import { SnackbarProvider } from "notistack";
+import { SnackbarProviderWithContext } from "@/context/SnackBarContext";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <Provider store={store}>
       <AppInitializer>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
+        <SnackbarProvider maxSnack={3}>
+          <SnackbarProviderWithContext>
+            <Layout>
+              <Component {...pageProps} />
+            </Layout>
+          </SnackbarProviderWithContext>
+        </SnackbarProvider>
       </AppInitializer>
     </Provider>
   );

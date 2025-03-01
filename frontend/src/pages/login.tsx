@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { loginUser, fetchUser } from "@/redux/slices/authSlice";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { useSnackbarContext } from "@/context/SnackBarContext";
 
 const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const dispatch = useAppDispatch();
@@ -13,10 +14,13 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const { showMessage } = useSnackbarContext();
   useEffect(() => {
     if (isAuthenticated) {
       router.push("/profile");
+    } else {
+      setIsCheckingAuth(false);
     }
   }, [isAuthenticated, router]);
 
@@ -37,11 +41,17 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
         await dispatch(fetchUser());
       }
     } catch (err: any) {
-      setError(err || "Ошибка входа");
+      showMessage(err || "Ошибка входа", "error");
     } finally {
       setLoading(false);
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="container mx-auto p-6">Проверка аутентификации...</div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">

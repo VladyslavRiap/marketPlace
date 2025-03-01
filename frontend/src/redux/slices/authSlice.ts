@@ -7,6 +7,7 @@ interface User {
   role: string;
   name?: string;
   mobnumber?: string;
+  avatar_url?: string;
 }
 
 interface AuthState {
@@ -37,23 +38,6 @@ export const registerUser = createAsyncThunk(
     }
   }
 );
-export const fetchUser = createAsyncThunk(
-  "auth/fetchUser",
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await api.get("/users/me");
-      console.log(response.data);
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        return rejectWithValue("Пользователь не найден, но не разлогиниваем!");
-      }
-      return rejectWithValue(
-        error.response?.data?.error || "Ошибка загрузки профиля"
-      );
-    }
-  }
-);
 
 export const loginUser = createAsyncThunk(
   "auth/login",
@@ -70,9 +54,84 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+export const fetchUser = createAsyncThunk(
+  "auth/fetchUser",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/users/me");
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return rejectWithValue("Пользователь не найден, но не разлогиниваем!");
+      }
+      return rejectWithValue(
+        error.response?.data?.error || "Ошибка загрузки профиля"
+      );
+    }
+  }
+);
+
 export const logoutUser = createAsyncThunk("auth/logout", async () => {
   await api.post("/auth/logout");
 });
+
+export const updateName = createAsyncThunk(
+  "auth/updateName",
+  async (name: string, { rejectWithValue }) => {
+    try {
+      const { data } = await api.put("/users/me", { name });
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Ошибка при обновлении имени");
+    }
+  }
+);
+
+export const updatePhone = createAsyncThunk(
+  "auth/updatePhone",
+  async (mobnumber: string, { rejectWithValue }) => {
+    try {
+      const { data } = await api.put("/users/me/update-mobnumber", {
+        mobnumber,
+      });
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Ошибка при обновлении телефона");
+    }
+  }
+);
+
+export const updatePassword = createAsyncThunk(
+  "auth/updatePassword",
+  async (
+    { oldPassword, newPassword }: { oldPassword: string; newPassword: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { data } = await api.put("/users/me/password", {
+        oldPassword,
+        newPassword,
+      });
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Ошибка при обновлении пароля");
+    }
+  }
+);
+
+export const updateAvatar = createAsyncThunk(
+  "auth/updateAvatar",
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      const response = await api.put("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Ошибка при загрузке аватара");
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: "auth",
@@ -80,6 +139,7 @@ const authSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -91,15 +151,58 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.user = action.payload;
+        state.loading = false;
+        state.error = null;
       })
-      .addCase(fetchUser.rejected, (state) => {
+      .addCase(fetchUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
         state.user = null;
       })
 
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+      })
+
+      .addCase(updateName.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.name = action.payload.name;
+        }
+      })
+
+      .addCase(updatePhone.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.mobnumber = action.payload.mobnumber;
+        }
+      })
+
+      .addCase(updatePassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updatePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(updateAvatar.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.avatar_url = action.payload.avatar_url;
+        }
       });
   },
 });

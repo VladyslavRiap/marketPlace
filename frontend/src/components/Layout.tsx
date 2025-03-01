@@ -10,11 +10,13 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const user = useAppSelector((state) => state.auth.user);
+  const favorites = useAppSelector((state) => state.favorite.favorites);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
     dispatch(fetchUser());
   }, [dispatch]);
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <motion.header
@@ -27,9 +29,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <h1 className="text-3xl font-extrabold tracking-wide">Marketplace</h1>
           <nav>
             <ul className="flex space-x-6">
-              <li>
-                <Link href="/" className="hover:underline">
-                  Home
+              <li className="relative">
+                <Link href="/favorites" className="hover:underline">
+                  Favorites
+                  {favorites.length > 0 && (
+                    <span className="absolute bottom-4 left-14 bg-red-600 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
+                      {favorites.length}
+                    </span>
+                  )}
                 </Link>
               </li>
               <li>

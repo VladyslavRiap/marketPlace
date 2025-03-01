@@ -4,11 +4,23 @@ const {
   updateUserProfile,
   changePassword,
   updateMobileNumber,
+  updateAvatar,
 } = require("../controllers/users.controller");
+const multer = require("multer");
 const authMiddleware = require("../middlewares/auth.middleware");
 
 const router = express.Router();
-
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"), false);
+    }
+  },
+});
 /**
  * @swagger
  * /api/users/me:
@@ -51,7 +63,7 @@ router.get("/me", authMiddleware, getCurrentUser);
  *         description: Unauthorized
  */
 router.put("/me", authMiddleware, updateUserProfile);
-
+router.put("/me/avatar", authMiddleware, upload.single("avatar"), updateAvatar);
 /**
  * @swagger
  * /api/users/me/password:
@@ -106,4 +118,5 @@ router.put("/me/password", authMiddleware, changePassword);
  *         description: Unauthorized
  */
 router.put("/me/update-mobnumber", authMiddleware, updateMobileNumber);
+
 module.exports = router;

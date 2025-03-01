@@ -8,6 +8,8 @@ module.exports = {
     FROM favorites f
     JOIN products p ON f.product_id = p.id
     WHERE f.user_id = $1`,
-  GET_FROM_FAVORITE: "SELECT id FROM favorites WHERE id = $1 AND user_id = $2",
-  DELETE_FROM_FAVORITE: "DELETE FROM favorites WHERE id = $1",
+  GET_FROM_FAVORITE:
+    "SELECT id FROM favorites WHERE product_id = $1 AND user_id = $2",
+  DELETE_FROM_FAVORITE:
+    "DELETE FROM favorites WHERE product_id = $1 AND user_id = $2",
 };

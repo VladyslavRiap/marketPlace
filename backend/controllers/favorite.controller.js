@@ -63,7 +63,7 @@ class FavoriteController {
         return res.status(404).json({ error: "Favorite not found" });
       }
 
-      await pool.query(queries.DELETE_FROM_FAVORITE, [id]);
+      await pool.query(queries.DELETE_FROM_FAVORITE, [id, userId]);
 
       res.json({ message: "Product removed from favorites" });
     } catch (error) {

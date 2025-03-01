@@ -1,6 +1,6 @@
 module.exports = {
   GET_USER_BY_ID:
-    "SELECT id, email, name, role, mobnumber FROM users WHERE id = $1",
+    "SELECT id, email, name, role, mobnumber, avatar_url  FROM users WHERE id = $1",
   GET_USER_PASSWORD: "SELECT password FROM users WHERE id = $1",
   GET_USER_BY_EMAIL: "SELECT * FROM users WHERE email = $1",
   CREATE_USER:
@@ -11,4 +11,6 @@ module.exports = {
   UPDATE_USER_MOBNUMBER: `
   UPDATE users SET mobnumber = $1 WHERE id = $2 RETURNING *;
 `,
+  UPDATE_USER_AVATAR:
+    "UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING *",
 };

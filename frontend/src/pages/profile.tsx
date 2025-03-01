@@ -13,11 +13,14 @@ import {
   BadgePlus,
   ShoppingCart,
   Edit,
+  Camera,
 } from "lucide-react";
+import { useSnackbarContext } from "@/context/SnackBarContext";
 
 const ProfilePage = ({ user: initialUser }: { user: any }) => {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const { showMessage } = useSnackbarContext();
 
   const [editName, setEditName] = useState(false);
   const [editPhone, setEditPhone] = useState(false);
@@ -26,8 +29,8 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
   const [newPhone, setNewPhone] = useState(initialUser.mobnumber || "");
   const [newPassword, setNewPassword] = useState("");
   const [oldPassword, setOldPassword] = useState("");
-  const [error, setError] = useState("");
-  const [user, setUser] = useState(initialUser); // Локальное состояние для пользователя
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(initialUser);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -36,56 +39,79 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
 
   const handleUpdateName = async () => {
     if (!newName) {
-      setError("Имя не может быть пустым");
+      showMessage("Имя не может быть пустым", "error");
       return;
     }
     try {
       await api.put("/users/me", { name: newName });
       setEditName(false);
-      setError("");
-      // Обновляем локальное состояние
       setUser((prevUser: any) => ({ ...prevUser, name: newName }));
+      showMessage("Имя обновлено успешно!", "success");
+      router.replace(router.asPath);
     } catch (error: any) {
-      setError("Ошибка при обновлении имени: " + error.message);
+      showMessage("Ошибка при обновлении имени: " + error.message, "error");
     }
   };
 
   const handleUpdatePhone = async () => {
     if (!newPhone.match(/^\+?\d{10,15}$/)) {
-      setError(
-        "Номер телефона должен содержать от 10 до 15 цифр, включая код страны"
+      showMessage(
+        "Номер телефона должен содержать от 10 до 15 цифр, включая код страны",
+        "error"
       );
       return;
     }
 
     try {
-      await api.put("/users/me/update-mobnumber", {
-        mobnumber: newPhone,
-      });
+      await api.put("/users/me/update-mobnumber", { mobnumber: newPhone });
       setEditPhone(false);
-      setError("");
-      // Обновляем локальное состояние
       setUser((prevUser: any) => ({ ...prevUser, mobnumber: newPhone }));
+      showMessage("Номер телефона обновлен успешно!", "success");
+      router.replace(router.asPath);
     } catch (error: any) {
-      console.error(
-        "Ошибка при обновлении телефона:",
-        error.response?.data || error.message
-      );
-      setError("Ошибка при обновлении телефона: " + error.message);
+      console.error("Ошибка при обновлении телефона:", error.message);
+      showMessage("Ошибка при обновлении телефона: " + error.message, "error");
     }
   };
 
   const handleUpdatePassword = async () => {
     if (!oldPassword || !newPassword) {
-      setError("Все поля должны быть заполнены");
+      showMessage("Все поля должны быть заполнены", "error");
       return;
     }
     try {
       await api.put("/users/me/password", { oldPassword, newPassword });
       setEditPassword(false);
-      setError("");
+      showMessage("Пароль обновлен успешно!", "success");
+      router.replace(router.asPath);
     } catch (error: any) {
-      setError("Ошибка при обновлении пароля: " + error.message);
+      showMessage("Ошибка при обновлении пароля: " + error.message, "error");
+    }
+  };
+
+  const handleUploadAvatar = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!event.target.files?.length) return;
+
+    const formData = new FormData();
+    formData.append("avatar", event.target.files[0]);
+
+    setLoading(true);
+
+    try {
+      const { data } = await api.put("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setUser({ ...user, avatar_url: data.avatarUrl });
+      setLoading(false);
+      showMessage("Аватар обновлен успешно!", "success");
+      router.replace(router.asPath);
+    } catch (error: any) {
+      console.error("Ошибка при загрузке аватара:", error.message);
+      setLoading(false);
+      showMessage("Ошибка при загрузке аватара. Попробуйте снова.", "error");
     }
   };
 
@@ -101,8 +127,33 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
           Данные аккаунта
         </h2>
 
+        <div className="flex flex-col items-center mb-6 relative">
+          {user.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt="Аватар"
+              className="w-52 h-52 rounded-full border-2"
+            />
+          ) : (
+            <User className="w-28 h-28 text-blue-600 bg-blue-100 p-3 rounded-full mb-4" />
+          )}
+          <label
+            htmlFor="avatar-upload"
+            className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg cursor-pointer"
+          >
+            <Camera className="w-6 h-6 text-blue-600" />
+          </label>
+          <input
+            id="avatar-upload"
+            type="file"
+            accept="image/*"
+            onChange={handleUploadAvatar}
+            className="hidden"
+          />
+          {loading && <p className="mt-2 text-gray-500">Загрузка...</p>}
+        </div>
+
         <div className="flex flex-col items-center mb-6">
-          <User className="w-28 h-28 text-blue-600 bg-blue-100 p-3 rounded-full mb-4" />
           <h2 className="text-2xl font-bold text-gray-800">
             {user.name || (
               <button className="flex items-center text-blue-600 hover:text-blue-800 transition">

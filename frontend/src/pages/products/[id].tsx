@@ -1,9 +1,15 @@
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-
 import api from "@/utils/api";
 import Image from "next/image";
+import {
+  addToFavorites,
+  fetchFavorites,
+  removeFromFavorites,
+} from "@/redux/slices/favoriteSlice";
+import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 
 interface Product {
   id: number;
@@ -37,6 +43,30 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { showMessage } = useSnackbarContext();
+
+  const favorites = useAppSelector((state) => state.favorite.favorites);
+
+  const isFavorite = product
+    ? favorites.some((fav) => fav.id === product.id)
+    : false;
+
+  const handleFavoriteToggle = async () => {
+    if (!product) return;
+    try {
+      if (isFavorite) {
+        await dispatch(removeFromFavorites(product.id)).unwrap();
+        showMessage("Товар удален из избранного", "success");
+      } else {
+        await dispatch(addToFavorites(product.id)).unwrap();
+        showMessage("Товар добавлен в избранное", "success");
+      }
+      dispatch(fetchFavorites());
+    } catch (error: any) {
+      showMessage("Ошибка при изменении избранного: " + error.message, "error");
+    }
+  };
 
   if (!product) {
     return (
@@ -115,11 +145,14 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
             Добавить в корзину
           </motion.button>
           <motion.button
-            className="border border-gray-400 px-6 py-3 rounded-md text-lg font-semibold hover:bg-gray-100"
+            className={`border px-6 py-3 rounded-md text-lg font-semibold hover:bg-gray-100 ${
+              isFavorite ? "border-red-600 text-red-600" : "border-gray-400"
+            }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={handleFavoriteToggle}
           >
-            ❤️ В избранное
+            {isFavorite ? "❌ Удалить из избранного" : "❤️ В избранное"}
           </motion.button>
         </div>
       </div>
