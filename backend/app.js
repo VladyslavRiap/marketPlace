@@ -19,8 +19,8 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // Разрешаем запросы с фронтенда
-    credentials: true, // ВАЖНО: Разрешаем cookies
+    origin: "http://localhost:3000",
+    credentials: true,
   })
 );
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

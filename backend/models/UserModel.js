@@ -35,6 +35,15 @@ class UserModel {
     return result.rows[0];
   }
 
+  static async updateUserMobNumber(userId, mobnumber) {
+    const result = await pool.query(queries.UPDATE_USER_MOBNUMBER, [
+      mobnumber,
+      userId,
+    ]);
+
+    return { message: "Password updated successfully" };
+  }
+
   static async updatePassword(userId, oldPassword, newPassword) {
     const user = await pool.query(queries.GET_USER_PASSWORD, [userId]);
 

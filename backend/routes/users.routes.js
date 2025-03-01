@@ -3,6 +3,7 @@ const {
   getCurrentUser,
   updateUserProfile,
   changePassword,
+  updateMobileNumber,
 } = require("../controllers/users.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 
@@ -79,5 +80,30 @@ router.put("/me", authMiddleware, updateUserProfile);
  *         description: Unauthorized
  */
 router.put("/me/password", authMiddleware, changePassword);
-
+/**
+ * @swagger
+ * /api/users/me/update-mobnumber:
+ *   put:
+ *     summary: Change user mobNumber
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               newNumber:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Number changed successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ */
+router.put("/me/update-mobnumber", authMiddleware, updateMobileNumber);
 module.exports = router;

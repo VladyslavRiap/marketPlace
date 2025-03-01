@@ -6,6 +6,7 @@ interface User {
   email: string;
   role: string;
   name?: string;
+  mobnumber?: string;
 }
 
 interface AuthState {
@@ -41,6 +42,7 @@ export const fetchUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get("/users/me");
+      console.log(response.data);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {

@@ -13,7 +13,24 @@ class UserController {
       res.status(500).json({ error: "Server error" });
     }
   }
+  static async updateMobileNumber(req, res) {
+    const { mobnumber } = req.body;
 
+    if (!mobnumber) {
+      return res.status(400).json({ error: "Mobile number is required" });
+    }
+
+    try {
+      const updatedUser = await UserModel.updateUserMobNumber(
+        req.user.userId,
+        mobnumber
+      );
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating mobile number:", error.message);
+      res.status(500).json({ error: "Server error" });
+    }
+  }
   static async updateUserProfile(req, res) {
     const { name } = req.body;
 

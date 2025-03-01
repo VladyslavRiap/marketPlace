@@ -4,8 +4,8 @@ const jwt = require("jsonwebtoken");
 const { findByEmail } = require("../models/UserModel");
 const queries = require("../queries/auth.queries");
 
-const ACCESS_TOKEN_EXPIRES = "15m"; // 15 минут
-const REFRESH_TOKEN_EXPIRES = "7d"; // 7 дней
+const ACCESS_TOKEN_EXPIRES = "15m";
+const REFRESH_TOKEN_EXPIRES = "7d";
 
 class AuthController {
   static async register(req, res) {
@@ -40,19 +40,18 @@ class AuthController {
 
       await pool.query(queries.REFRESH_TOKEN, [user.id, refreshToken]);
 
-      // Сохраняем токены в cookies
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: true, // Включите true в production
+        secure: true,
         sameSite: "Strict",
-        maxAge: 15 * 60 * 1000, // 15 минут
+        maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: true,
         sameSite: "Strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       res.json({ user });
