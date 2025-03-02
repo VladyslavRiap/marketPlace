@@ -21,15 +21,18 @@ class CartController {
 
   static async removeFromCart(req, res) {
     const { userId } = req.user;
-    const { productId } = req.body;
+    const productId = parseInt(req.params.id, 10);
+
+    if (isNaN(productId)) {
+      return res.status(400).json({ error: "Некорректный ID товара" });
+    }
 
     try {
       await pool.query(queries.DELETE_FROM_CART, [userId, productId]);
-
-      res.json({ message: "Item removed from the cart" });
+      res.json({ message: "Товар удален из корзины" });
     } catch (error) {
-      console.error("Error removing item from cart:", error.message);
-      res.status(500).json({ error: "Server error" });
+      console.error("Ошибка удаления товара из корзины:", error.message);
+      res.status(500).json({ error: "Ошибка сервера" });
     }
   }
 

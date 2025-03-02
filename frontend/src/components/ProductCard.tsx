@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useSnackbarContext } from "@/context/SnackBarContext";
 import {
@@ -10,6 +10,7 @@ import {
   removeFromFavorites,
   fetchFavorites,
 } from "@/redux/slices/favoriteSlice";
+import { addToCart } from "@/redux/slices/cartSlice";
 
 interface Product {
   id: number;
@@ -29,7 +30,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const dispatch = useAppDispatch();
   const { showMessage } = useSnackbarContext();
   const favoriteList = useAppSelector((state) => state.favorite.favorites);
-
   const isFavorite = favoriteList.some((fav) => fav.id === product.id);
 
   const handleFavoriteClick = async (event: React.MouseEvent) => {
@@ -48,6 +48,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       dispatch(fetchFavorites());
     } catch (error: any) {
       showMessage("Ошибка: " + error.message, "error");
+    }
+  };
+
+  const handleAddToCart = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+
+    try {
+      await dispatch(addToCart(product.id)).unwrap();
+      showMessage("Товар добавлен в корзину", "success");
+    } catch (error: any) {
+      showMessage("Ошибка при добавлении в корзину: " + error.message, "error");
     }
   };
 
@@ -109,6 +121,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
           <span className="text-sm text-yellow-500">⭐ {product.rating}</span>
         </div>
+        <button
+          onClick={handleAddToCart}
+          className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center justify-center hover:bg-blue-700 transition"
+        >
+          <ShoppingCart className="w-5 h-5 mr-2" /> Добавить в корзину
+        </button>
       </div>
     </motion.div>
   );

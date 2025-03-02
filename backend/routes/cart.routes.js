@@ -62,7 +62,7 @@ router.post("/", authMiddleware, cartController.addToCart);
  *       200:
  *         description: Product removed from the cart
  */
-router.delete("/", authMiddleware, cartController.removeFromCart);
+router.delete("/:id", authMiddleware, cartController.removeFromCart);
 
 /**
  * @swagger

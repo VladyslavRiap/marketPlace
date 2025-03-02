@@ -11,6 +11,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const user = useAppSelector((state) => state.auth.user);
   const favorites = useAppSelector((state) => state.favorite.favorites);
+  const cart = useAppSelector((state) => state.cart.items);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -44,9 +45,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   Products
                 </Link>
               </li>
-              <li>
+              <li className="relative">
                 <Link href="/cart" className="hover:underline">
                   Cart
+                  {cart.length > 0 && (
+                    <span className="absolute -top-2 -right-3 bg-red-600 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
+                      {cart.length}
+                    </span>
+                  )}
                 </Link>
               </li>
               <li>

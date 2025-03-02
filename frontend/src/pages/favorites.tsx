@@ -66,11 +66,8 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {favorites.map((product) => (
-            <Link href={`/products/${product.id}`}>
-              <div
-                key={product.id}
-                className="bg-white shadow-lg rounded-lg p-4"
-              >
+            <div key={product.id} className="bg-white shadow-lg rounded-lg p-4">
+              <Link href={`/products/${product.id}`}>
                 <img
                   src={product.image_url}
                   alt={product.name}
@@ -79,16 +76,16 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
                 <h2 className="text-xl font-semibold mb-2">{product.name}</h2>
                 <p className="text-gray-600 mb-2">{product.description}</p>
                 <p className="text-lg font-bold">${product.price}</p>
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={() => handleRemoveFromFavorites(product.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 className="w-6 h-6" />
-                  </button>
-                </div>
+              </Link>
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => handleRemoveFromFavorites(product.id)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <Trash2 className="w-6 h-6" />
+                </button>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

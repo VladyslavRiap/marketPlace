@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import api from "@/utils/api";
 import { motion } from "framer-motion";
@@ -16,6 +16,8 @@ import {
   Camera,
 } from "lucide-react";
 import { useSnackbarContext } from "@/context/SnackBarContext";
+import { clearCartRedux, fetchCart } from "@/redux/slices/cartSlice";
+import { clearFavorites, fetchFavorites } from "@/redux/slices/favoriteSlice";
 
 const ProfilePage = ({ user: initialUser }: { user: any }) => {
   const dispatch = useAppDispatch();
@@ -32,8 +34,15 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(initialUser);
 
+  useEffect(() => {
+    dispatch(fetchFavorites());
+    dispatch(fetchCart());
+  }, [dispatch]);
+
   const handleLogout = async () => {
     await dispatch(logoutUser());
+    dispatch(clearCartRedux());
+    dispatch(clearFavorites());
     router.push("/login");
   };
 
