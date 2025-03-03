@@ -112,7 +112,7 @@ class AuthController {
   }
 
   static async refreshToken(req, res) {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.cookies;
 
     if (!refreshToken) {
       return res.status(401).json({ error: "Refresh token is required" });
@@ -134,6 +134,13 @@ class AuthController {
         process.env.JWT_SECRET,
         { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
+
+      res.cookie("accessToken", newAccessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+        maxAge: 15 * 60 * 1000,
+      });
 
       res.json({ accessToken: newAccessToken });
     } catch (error) {

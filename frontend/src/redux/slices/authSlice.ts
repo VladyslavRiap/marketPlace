@@ -46,8 +46,10 @@ export const loginUser = createAsyncThunk(
     { dispatch, rejectWithValue }
   ) => {
     try {
-      await api.post("/auth/login", userData);
+      const response = await api.post("/auth/login", userData);
+
       await dispatch(fetchUser());
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || "Ошибка входа");
     }

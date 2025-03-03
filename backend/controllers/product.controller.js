@@ -8,7 +8,6 @@ class ProductController {
       const {
         page = 1,
         limit = 10,
-        query,
         category,
         minPrice,
         maxPrice,
@@ -60,10 +59,6 @@ class ProductController {
         if (parsedRating !== null) {
           queryText += ` AND rating >= $${valueIndex++}`;
           values.push(parsedRating);
-        }
-        if (query) {
-          queryText += ` AND (name ILIKE $${valueIndex} OR description ILIKE $${valueIndex})`;
-          values.push(`%${query}%`);
         }
       }
 
@@ -207,16 +202,52 @@ class ProductController {
       res.status(500).json({ error: "Server error" });
     }
   }
+  static async searchProducts(req, res) {
+    const { query, page = 1, limit = 10 } = req.query;
+    const parsedPage = parseInt(page, 10);
+    const parsedLimit = parseInt(limit, 10);
+
+    if (
+      isNaN(parsedPage) ||
+      isNaN(parsedLimit) ||
+      parsedPage < 1 ||
+      parsedLimit < 1
+    ) {
+      return res.status(400).json({ error: "Invalid page or limit value" });
+    }
+
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    if (!query) {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+
+    try {
+      const searchQuery = `
+        SELECT * FROM products 
+        WHERE name ILIKE $1 
+        LIMIT $2 OFFSET $3
+      `;
+
+      const values = [`%${query}%`, parsedLimit, offset];
+
+      const result = await pool.query(searchQuery, values);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error searching products:", error.message);
+      res.status(500).json({ error: "Cannot receive product" });
+    }
+  }
 }
 
 ProductController.getProducts = ProductController.fabricGetMethod(
   queries.GET_PRODUCTS,
   true
 );
-ProductController.searchProducts = ProductController.fabricGetMethod(
-  queries.GET_PRODUCTS,
-  true
-);
+// ProductController.searchProducts = ProductController.fabricGetMethod(
+//   queries.GET_PRODUCTS,
+//   true
+// );
 ProductController.filterProducts = ProductController.fabricGetMethod(
   queries.GET_PRODUCTS,
   true

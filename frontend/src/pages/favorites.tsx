@@ -5,11 +5,11 @@ import {
   fetchFavorites,
   removeFromFavorites,
 } from "@/redux/slices/favoriteSlice";
-import api from "@/utils/api";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { useSnackbarContext } from "@/context/SnackBarContext";
 import Link from "next/link";
+import api from "@/utils/api";
 
 interface Product {
   id: number;
@@ -31,15 +31,15 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
   const { favorites, loading } = useAppSelector((state) => state.favorite);
 
   useEffect(() => {
-    dispatch(fetchFavorites());
-  }, [dispatch]);
+    if (favorites.length === 0) {
+      dispatch(fetchFavorites());
+    }
+  }, [dispatch, favorites.length]);
 
   const handleRemoveFromFavorites = async (favoriteId: number) => {
     try {
       await dispatch(removeFromFavorites(favoriteId)).unwrap();
       showMessage("Товар удален из избранного", "success");
-
-      dispatch(fetchFavorites());
     } catch (error: any) {
       showMessage(
         "Ошибка при удалении из избранного: " + error.message,

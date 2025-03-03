@@ -40,9 +40,13 @@ const CartPage = ({ initialCart }: CartPageProps) => {
       await dispatch(removeFromCart(productId)).unwrap();
       const updatedCart = localCart.filter((item) => item.id !== productId);
       setLocalCart(updatedCart);
-      setTotalAmount(
-        updatedCart.reduce((acc, item) => acc + item.total_price, 0)
+
+      const updatedTotalAmount = updatedCart.reduce(
+        (acc, item) => acc + (Number(item.total_price) || 0),
+        0
       );
+      setTotalAmount(updatedTotalAmount);
+
       showMessage("Товар удален из корзины", "success");
     } catch (error: any) {
       showMessage("Ошибка: " + error.message, "error");
@@ -56,16 +60,20 @@ const CartPage = ({ initialCart }: CartPageProps) => {
           ? {
               ...item,
               quantity: Math.max(1, item.quantity + change),
-              total_price: Number(
-                ((item.quantity + change) * item.price).toFixed(2)
-              ),
+              total_price:
+                Number(
+                  ((item.quantity + change) * (item.price || 0)).toFixed(2)
+                ) || 0,
             }
           : item
       );
 
       setLocalCart(updatedCart);
       setTotalAmount(
-        updatedCart.reduce((acc, item) => acc + Number(item.total_price), 0)
+        updatedCart.reduce(
+          (acc, item) => acc + (Number(item.total_price) || 0),
+          0
+        )
       );
 
       await dispatch(
@@ -171,11 +179,12 @@ const CartPage = ({ initialCart }: CartPageProps) => {
 
             <div className="mt-8 p-6 bg-white rounded-lg shadow-md flex flex-col items-center md:flex-row md:justify-between">
               <p className="text-3xl font-bold text-gray-900">
-                Итого:{" "}
+                Итого:
                 <span className="text-red-600">
-                  ${Number(totalAmount).toFixed(2)}
+                  ${isNaN(totalAmount) ? "0.00" : totalAmount.toFixed(2)}
                 </span>
               </p>
+
               <button
                 onClick={handleClearCart}
                 className="mt-4 md:mt-0 bg-red-500 text-white px-8 py-4 rounded-lg hover:bg-red-600 transition text-xl"
@@ -191,10 +200,13 @@ const CartPage = ({ initialCart }: CartPageProps) => {
 };
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  const { data } = await api.get("/cart", {
-    headers: { cookie: req.headers.cookie || "" },
-  });
-  return { props: { initialCart: data } };
+  try {
+    const { data } = await api.get("/cart", {
+      headers: { cookie: req.headers.cookie || "" },
+    });
+    return { props: { initialCart: data } };
+  } catch (error) {
+    return { redirect: { destination: "/login", permanent: false } };
+  }
 };
-
 export default CartPage;

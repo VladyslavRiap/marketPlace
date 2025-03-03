@@ -40,7 +40,17 @@ router.get("/", authMiddleware, cartController.getCart);
  *         description: Product added to the cart
  */
 router.post("/", authMiddleware, cartController.addToCart);
-
+/**
+ * @swagger
+ * /api/cart/clear:
+ *   delete:
+ *     summary: Clear the cart
+ *     tags: [Cart]
+ *     responses:
+ *       200:
+ *         description: Cart cleared successfully
+ */
+router.delete("/clear", authMiddleware, cartController.clearCart);
 /**
  * @swagger
  * /api/cart:
@@ -95,17 +105,5 @@ router.delete("/:id", authMiddleware, cartController.removeFromCart);
  *         description: Product not found in the cart
  */
 router.post("/update", authMiddleware, cartController.updateQuantityInCart);
-
-/**
- * @swagger
- * /api/cart/clear:
- *   delete:
- *     summary: Clear the cart
- *     tags: [Cart]
- *     responses:
- *       200:
- *         description: Cart cleared successfully
- */
-router.delete("/clear", authMiddleware, cartController.clearCart);
 
 module.exports = router;

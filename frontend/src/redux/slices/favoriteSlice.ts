@@ -96,5 +96,6 @@ const favoriteSlice = createSlice({
       });
   },
 });
+
 export const { clearFavorites } = favoriteSlice.actions;
 export default favoriteSlice.reducer;

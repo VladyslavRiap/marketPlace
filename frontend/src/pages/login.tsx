@@ -6,6 +6,7 @@ import { loginUser, fetchUser } from "@/redux/slices/authSlice";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useSnackbarContext } from "@/context/SnackBarContext";
+import { cookies } from "next/headers";
 
 const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const dispatch = useAppDispatch();
