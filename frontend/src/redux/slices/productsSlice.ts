@@ -14,21 +14,46 @@ export interface Product {
 
 interface ProductsState {
   items: Product[];
+  totalPages: number;
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
 }
 
 const initialState: ProductsState = {
   items: [],
+  totalPages: 1,
   status: "idle",
   error: null,
 };
 
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
-  async () => {
-    const response = await api.get("/products?limit=50");
-    return response.data;
+  async (params: Record<string, any>, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get("/products", { params });
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Error fetching products");
+    }
+  }
+);
+
+export const searchProducts = createAsyncThunk(
+  "products/searchProducts",
+  async (
+    { query, page, limit }: { query: string; page: number; limit: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { data } = await api.get("/products/search", {
+        params: { query, page, limit },
+      });
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data || "Error searching products"
+      );
+    }
   }
 );
 
@@ -43,13 +68,25 @@ const productsSlice = createSlice({
         state.status = "loading";
         state.error = null;
       })
-
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.items = action.payload;
+        state.items = action.payload.products;
+      })
+      .addCase(fetchProducts.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "Something went wrong";
       })
 
-      .addCase(fetchProducts.rejected, (state, action) => {
+      .addCase(searchProducts.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(searchProducts.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.items = action.payload.products;
+        state.totalPages = action.payload.totalPages;
+      })
+      .addCase(searchProducts.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Something went wrong";
       });

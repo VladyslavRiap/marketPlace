@@ -2,6 +2,22 @@ const pool = require("../config/db");
 const queries = require("../queries/product.queries");
 
 const uploadFile = require("../services/s3");
+
+const validCategories = [
+  "Phones, tablets and laptops",
+  "Computers and peripheral devices",
+  "TV, audio and photo",
+  "Game",
+  "Large electrical appliances",
+  "Small electrical appliances",
+  "Fashion",
+  "Health and Beauty",
+  "Home, Garden and Pet Shop",
+  "Toys and children’s products",
+  "Sports and Leisure",
+  "Auto and DIY",
+  "Books, office and food",
+];
 class ProductController {
   static fabricGetMethod(baseQuery, hasFilters = false) {
     return async (req, res) => {
@@ -36,6 +52,10 @@ class ProductController {
         return res
           .status(400)
           .json({ error: "Rating must be between 0 and 5" });
+      }
+
+      if (category && !validCategories.includes(category)) {
+        return res.status(400).json({ error: "Invalid category" });
       }
 
       const offset = (parsedPage - 1) * parsedLimit;
@@ -229,10 +249,25 @@ class ProductController {
         LIMIT $2 OFFSET $3
       `;
 
+      const countQuery = `
+        SELECT COUNT(*) FROM products 
+        WHERE name ILIKE $1
+      `;
+
       const values = [`%${query}%`, parsedLimit, offset];
 
-      const result = await pool.query(searchQuery, values);
-      res.json(result.rows);
+      const [productsResult, countResult] = await Promise.all([
+        pool.query(searchQuery, values),
+        pool.query(countQuery, [`%${query}%`]),
+      ]);
+
+      const totalCount = parseInt(countResult.rows[0].count, 10);
+      const totalPages = Math.ceil(totalCount / parsedLimit);
+
+      res.json({
+        products: productsResult.rows,
+        totalPages,
+      });
     } catch (error) {
       console.error("Error searching products:", error.message);
       res.status(500).json({ error: "Cannot receive product" });
