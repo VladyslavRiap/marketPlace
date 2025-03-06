@@ -1,13 +1,12 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useAppDispatch, useAppSelector, useDebounce } from "@/redux/hooks";
 import { motion } from "framer-motion";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import Link from "next/link";
 import { fetchUser } from "@/redux/slices/authSlice";
 import { useRouter } from "next/router";
-
 import { Search } from "lucide-react";
-import { Product } from "@/redux/slices/productsSlice";
-import api from "@/utils/api";
+
+import { searchProducts } from "@/redux/slices/productsSlice";
 import Image from "next/image";
 
 interface LayoutProps {
@@ -18,42 +17,41 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const user = useAppSelector((state) => state.auth.user);
   const favorites = useAppSelector((state) => state.favorite.favorites);
   const cart = useAppSelector((state) => state.cart.items);
+  const products = useAppSelector((state) => state.products.items);
   const dispatch = useAppDispatch();
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const delaySearch = setTimeout(() => {
-      if (searchQuery.trim()) {
-        api
-          .get("/products/search", {
-            params: { query: searchQuery },
-          })
-          .then((response) => setSearchResults(response.data))
-          .catch((error) =>
-            console.error("Ошибка при поиске продуктов:", error)
-          );
-      } else {
-        setSearchResults([]);
-      }
-    }, 500);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-    return () => clearTimeout(delaySearch);
-  }, [searchQuery]);
+  useEffect(() => {
+    dispatch(fetchUser());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (debouncedSearchQuery.trim()) {
+      dispatch(
+        searchProducts({ query: debouncedSearchQuery, page: 1, limit: 10 })
+      );
+    }
+  }, [dispatch, debouncedSearchQuery]);
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && searchQuery.trim()) {
-      router.push(`/products/search?query=${searchQuery}`);
+    if (e.key === "Enter" && debouncedSearchQuery.trim()) {
+      router.push(`/products/search?query=${debouncedSearchQuery}`);
       setSearchQuery("");
-      setSearchResults([]);
       setIsSearchFocused(false);
     }
   };
+
+  const handleSearchItemClick = () => {
+    setIsSearchFocused(false);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -67,12 +65,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  useEffect(() => {
-    dispatch(fetchUser());
-  }, [dispatch]);
-  const handleSearchItemClick = () => {
-    setIsSearchFocused(false);
-  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <motion.header
@@ -97,9 +90,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               />
               <Search className="absolute left-3 top-2.5 text-gray-500 w-5 h-5" />
             </div>
-            {isSearchFocused && searchResults.length > 0 && (
+            {isSearchFocused && products.length > 0 ? (
               <div className="absolute top-12 left-0 right-0 bg-white text-gray-900 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                {searchResults.map((product) => (
+                {products.map((product) => (
                   <Link
                     key={product.id}
                     href={`/products/${product.id}`}
@@ -124,7 +117,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </Link>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
 
           <nav>

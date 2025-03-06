@@ -23,7 +23,7 @@ class ProductController {
     return async (req, res) => {
       const {
         page = 1,
-        limit = 10,
+        limit = 12,
         category,
         minPrice,
         maxPrice,
@@ -60,25 +60,33 @@ class ProductController {
 
       const offset = (parsedPage - 1) * parsedLimit;
       let queryText = baseQuery;
+      let countQuery = `SELECT COUNT(*) FROM (${baseQuery}) AS total`;
       let values = [];
       let valueIndex = 1;
 
+      let filters = [];
+
       if (hasFilters) {
         if (category) {
-          queryText += ` AND category = $${valueIndex++}`;
+          filters.push(`category = $${valueIndex++}`);
           values.push(category);
         }
         if (minPrice) {
-          queryText += ` AND price >= $${valueIndex++}`;
+          filters.push(`price >= $${valueIndex++}`);
           values.push(minPrice);
         }
         if (maxPrice) {
-          queryText += ` AND price <= $${valueIndex++}`;
+          filters.push(`price <= $${valueIndex++}`);
           values.push(maxPrice);
         }
         if (parsedRating !== null) {
-          queryText += ` AND rating >= $${valueIndex++}`;
+          filters.push(`rating >= $${valueIndex++}`);
           values.push(parsedRating);
+        }
+
+        if (filters.length > 0) {
+          queryText += ` WHERE ` + filters.join(" AND ");
+          countQuery += ` WHERE ` + filters.join(" AND ");
         }
       }
 
@@ -95,8 +103,21 @@ class ProductController {
       values.push(parsedLimit, offset);
 
       try {
-        const result = await pool.query(queryText, values);
-        res.json(result.rows);
+        const [productsResult, countResult] = await Promise.all([
+          pool.query(queryText, values),
+          pool.query(countQuery, values.slice(0, -2)),
+        ]);
+
+        const totalCount = parseInt(countResult.rows[0].count, 10);
+        const totalPages = Math.ceil(totalCount / parsedLimit);
+
+        res.json({
+          products: productsResult.rows,
+          totalPages,
+          currentPage: parsedPage,
+        });
+
+        console.log({ totalPages, currentPage: parsedPage, totalCount });
       } catch (error) {
         console.error("Error executing query:", error.message);
         res.status(500).json({ error: "Server error" });

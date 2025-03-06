@@ -27,19 +27,40 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { query } = context;
   try {
     const { data } = await api.get("/products", { params: query });
-    return { props: { initialProducts: data } };
+    return {
+      props: {
+        initialProducts: data.products || [],
+        initialTotalPages: data.totalPages || 1,
+        initialCurrentPage: data.currentPage || 1,
+      },
+    };
   } catch (error) {
-    return { props: { initialProducts: [] } };
+    return {
+      props: {
+        initialProducts: [],
+        initialTotalPages: 1,
+        initialCurrentPage: 1,
+      },
+    };
   }
 };
 
 interface HomeProps {
   initialProducts: Product[];
+  initialTotalPages: number;
+  initialCurrentPage: number;
 }
 
-const Home: React.FC<HomeProps> = ({ initialProducts }) => {
+const Home: React.FC<HomeProps> = ({
+  initialProducts,
+  initialTotalPages,
+  initialCurrentPage,
+}) => {
   const router = useRouter();
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [currentPage, setCurrentPage] = useState(initialCurrentPage);
   const [category, setCategory] = useState(router.query.category || "");
   const [priceRange, setPriceRange] = useState<number[]>([
     Number(router.query.minPrice) || 0,
@@ -50,9 +71,10 @@ const Home: React.FC<HomeProps> = ({ initialProducts }) => {
   );
   const [sortBy, setSortBy] = useState(router.query.sortBy || "id");
   const [order, setOrder] = useState(router.query.order || "asc");
-  const limit = 12;
+
   const updateQueryParams = () => {
     const queryParams = new URLSearchParams();
+    queryParams.set("page", (currentPage || 1).toString());
 
     if (category) queryParams.set("category", category as string);
     if (priceRange) {
@@ -62,33 +84,38 @@ const Home: React.FC<HomeProps> = ({ initialProducts }) => {
     if (rating) queryParams.set("rating", rating.toString());
     if (sortBy) queryParams.set("sortBy", sortBy as string);
     if (order) queryParams.set("order", order as string);
-    if (limit) queryParams.set("limit", limit.toString());
+
     router.replace(
       { pathname: "/products/", query: queryParams.toString() },
       undefined,
-      {
-        shallow: true,
-      }
+      { shallow: true }
     );
   };
 
   useEffect(() => {
     updateQueryParams();
-  }, [category, priceRange, rating, sortBy, order, limit]);
+  }, [category, priceRange, rating, sortBy, order, currentPage]);
 
   useEffect(() => {
     const fetchFilteredProducts = async () => {
       try {
         const { data } = await api.get("/products", { params: router.query });
-        setProducts(data);
+        console.log(data.totalPages);
+        setProducts(data.products);
+        setTotalPages(data.totalPages);
+        setCurrentPage(data.currentPage);
       } catch (error) {
         console.error("Error fetching products:", error);
       }
     };
-
     fetchFilteredProducts();
   }, [router.query]);
 
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
   const handleStarClick = (starValue: number) => {
     setRating((prevRating) => (prevRating === starValue ? null : starValue));
   };
@@ -159,10 +186,32 @@ const Home: React.FC<HomeProps> = ({ initialProducts }) => {
       </div>
 
       {products?.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+        <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-gray-200 rounded-md mx-2 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-gray-200 rounded-md mx-2 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       ) : (
         <div className="flex items-center justify-center w-full h-[50vh]">

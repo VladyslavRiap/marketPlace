@@ -1,5 +1,6 @@
 module.exports = {
-  GET_PRODUCTS: "SELECT * FROM products WHERE 1=1",
+  GET_PRODUCTS: "SELECT * FROM products",
+
   GET_PRODUCT_BY_ID: "SELECT * FROM products WHERE id = $1",
   INSERT_PRODUCT:
     "INSERT INTO products (name, price, category, description, image_url, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",

@@ -31,6 +31,7 @@ export const fetchProducts = createAsyncThunk(
   async (params: Record<string, any>, { rejectWithValue }) => {
     try {
       const { data } = await api.get("/products", { params });
+
       return data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "Error fetching products");
@@ -48,6 +49,7 @@ export const searchProducts = createAsyncThunk(
       const { data } = await api.get("/products/search", {
         params: { query, page, limit },
       });
+      console.log(data);
       return data;
     } catch (error: any) {
       return rejectWithValue(
