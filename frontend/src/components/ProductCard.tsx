@@ -24,9 +24,15 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
+  onEdit?: (id: number) => void; // Функция для редактирования товара
+  onDelete?: (id: number) => void; // Функция для удаления товара
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onEdit,
+  onDelete,
+}) => {
   const dispatch = useAppDispatch();
   const { showMessage } = useSnackbarContext();
   const favoriteList = useAppSelector((state) => state.favorite.favorites);
@@ -121,12 +127,34 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
           <span className="text-sm text-yellow-500">⭐ {product.rating}</span>
         </div>
-        <button
-          onClick={handleAddToCart}
-          className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center justify-center hover:bg-blue-700 transition"
-        >
-          <ShoppingCart className="w-5 h-5 mr-2" /> Добавить в корзину
-        </button>
+
+        <div className="mt-4 flex justify-between items-center">
+          {!onEdit && !onDelete && (
+            <button
+              onClick={handleAddToCart}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center justify-center hover:bg-blue-700 transition"
+            >
+              <ShoppingCart className="w-5 h-5 mr-2" /> Добавить в корзину
+            </button>
+          )}
+
+          {onEdit && (
+            <button
+              onClick={() => onEdit(product.id)}
+              className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm md:text-base"
+            >
+              Редактировать
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(product.id)}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm md:text-base"
+            >
+              Удалить
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );

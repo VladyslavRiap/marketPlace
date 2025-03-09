@@ -16,14 +16,8 @@ const upload = multer({
     }
   },
 });
+router.get("/mine", authMiddleware, productController.getSellerProducts);
 
-router.post(
-  "/",
-  authMiddleware,
-  checkRole(["admin", "seller"]),
-  upload.single("image"),
-  productController.addProduct
-);
 /**
  * @swagger
  * /api/products:
@@ -279,7 +273,6 @@ router.post(
   upload.single("image"),
   productController.addProduct
 );
-
 /**
  * @swagger
  * /api/products/{id}:
@@ -332,7 +325,7 @@ router.put(
   "/:id",
   authMiddleware,
   checkRole(["admin", "seller"]),
-
+  upload.single("image"),
   productController.updateProduct
 );
 

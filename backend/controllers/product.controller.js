@@ -116,8 +116,6 @@ class ProductController {
           totalPages,
           currentPage: parsedPage,
         });
-
-        console.log({ totalPages, currentPage: parsedPage, totalCount });
       } catch (error) {
         console.error("Error executing query:", error.message);
         res.status(500).json({ error: "Server error" });
@@ -183,7 +181,7 @@ class ProductController {
 
   static async updateProduct(req, res) {
     const { id } = req.params;
-    const { name, price, category, description, image_url } = req.body;
+    const { name, price, category, description } = req.body;
     const userId = req.user.userId;
 
     if (!name || !price) {
@@ -196,21 +194,62 @@ class ProductController {
         return res.status(404).json({ error: "Product not found" });
       }
 
-      const productUserId = productResult.rows[0].user_id;
+      const product = productResult.rows[0];
+      const productUserId = product.user_id;
+
       if (productUserId !== userId && req.user.role !== "admin") {
         return res
           .status(403)
           .json({ error: "You are not authorized to update this product" });
       }
 
-      const result = await pool.query(queries.UPDATE_PRODUCT, [
-        name,
-        price,
-        category,
-        description,
-        image_url,
-        id,
-      ]);
+      const updatedFields = {};
+      if (name && name !== product.name) updatedFields.name = name;
+      if (price && price !== product.price) updatedFields.price = price;
+      if (category && category !== product.category)
+        updatedFields.category = category;
+      if (description && description !== product.description)
+        updatedFields.description = description;
+
+      let uploadedImageUrl = product.image_url;
+
+      if (req.file) {
+        if (!req.file.mimetype.startsWith("image/")) {
+          return res
+            .status(400)
+            .json({ error: "Only image files are allowed" });
+        }
+
+        uploadedImageUrl = await uploadFile(
+          "marketplace-my-1-2-3-4",
+          req.file.originalname,
+          req.file.buffer
+        );
+      }
+
+      if (uploadedImageUrl !== product.image_url) {
+        updatedFields.image_url = uploadedImageUrl;
+      }
+
+      if (Object.keys(updatedFields).length === 0) {
+        return res.status(400).json({ error: "No changes to update" });
+      }
+
+      const updateColumns = Object.keys(updatedFields)
+        .map(
+          (field) =>
+            `${field} = $${Object.keys(updatedFields).indexOf(field) + 1}`
+        )
+        .join(", ");
+      const updateValues = Object.values(updatedFields);
+
+      const updateQuery = `
+        UPDATE products
+        SET ${updateColumns}
+        WHERE id = $${updateValues.length + 1}
+        RETURNING *;
+      `;
+      const result = await pool.query(updateQuery, [...updateValues, id]);
 
       res.json(result.rows[0]);
     } catch (error) {
@@ -294,8 +333,27 @@ class ProductController {
       res.status(500).json({ error: "Cannot receive product" });
     }
   }
-}
+  static async getSellerProducts(req, res) {
+    const userId = req.user?.userId;
 
+    if (!userId || isNaN(userId)) {
+      console.error("❌ Ошибка: userId невалидный:", userId);
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    try {
+      const result = await pool.query(
+        "SELECT * FROM products WHERE user_id = $1",
+        [userId]
+      );
+
+      res.json(result.rows.length > 0 ? result.rows : []);
+    } catch (error) {
+      console.error("❌ Ошибка при запросе товаров продавца:", error.message);
+      res.status(500).json({ error: "Cannot fetch seller products" });
+    }
+  }
+}
 ProductController.getProducts = ProductController.fabricGetMethod(
   queries.GET_PRODUCTS,
   true

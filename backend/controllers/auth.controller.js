@@ -33,7 +33,7 @@ class AuthController {
         { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
       const refreshToken = jwt.sign(
-        { userId: user.id },
+        { userId: user.id, role: user.role },
         process.env.JWT_REFRESH_SECRET,
         { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
@@ -79,7 +79,7 @@ class AuthController {
         { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
       const refreshToken = jwt.sign(
-        { userId: user.id },
+        { userId: user.id, role: user.role },
         process.env.JWT_REFRESH_SECRET,
         { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
@@ -130,7 +130,7 @@ class AuthController {
       const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
       const newAccessToken = jwt.sign(
-        { userId: decoded.userId },
+        { userId: decoded.userId, role: decoded.role },
         process.env.JWT_SECRET,
         { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
