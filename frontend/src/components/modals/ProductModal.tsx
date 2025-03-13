@@ -18,7 +18,7 @@ import AttributeForm from "../AttributeForm";
 interface ProductModalProps {
   onClose: () => void;
   productToEdit?: Product | null;
-  onSuccess?: () => void; // Callback после успешного завершения
+  onSuccess?: () => void;
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({
@@ -49,29 +49,28 @@ const ProductModal: React.FC<ProductModalProps> = ({
   useEffect(() => {
     if (subcategoryId) {
       console.log(subcategoryId);
-      dispatch(fetchSubcategories(Number(subcategoryId))); // Преобразуем в число
+      dispatch(fetchSubcategories(Number(subcategoryId)));
     } else if (productToEdit?.subcategory) {
-      dispatch(fetchSubcategories(Number(productToEdit.subcategory))); // Преобразуем в число
+      dispatch(fetchSubcategories(Number(productToEdit.subcategory)));
     }
   }, [subcategoryId, productToEdit, dispatch]);
 
-  // Обработчик отправки формы для продукта
   const handleProductSubmit = async (productData: FormData) => {
     try {
       if (productToEdit) {
         await dispatch(
           updateProduct({ id: productToEdit.id, product: productData })
         ).unwrap();
-        onSuccess?.(); // Вызываем callback после успешного обновления
+        onSuccess?.();
         onClose();
       } else {
         const resultAction = await dispatch(addProduct(productData));
         if (addProduct.fulfilled.match(resultAction)) {
           const newProductId = resultAction.payload.id;
           setProductId(newProductId);
-          const subcategoryId = Number(productData.get("subcategory_id")); // Преобразуем в число
+          const subcategoryId = Number(productData.get("subcategory_id"));
           setSubcategoryId(subcategoryId);
-          setStep(2); // Переходим к шагу 2 (добавление атрибутов)
+          setStep(2);
         }
       }
     } catch (error) {
@@ -79,14 +78,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
     }
   };
 
-  // Обработчик отправки формы для атрибутов
   const handleAttributesSubmit = async (attributes: any[]) => {
     if (productId && subcategoryId) {
       try {
         await dispatch(
           addProductAttributes({ productId, attributes })
         ).unwrap();
-        onSuccess?.(); // Вызываем callback после успешного добавления атрибутов
+        onSuccess?.();
         onClose();
       } catch (error) {
         console.error("Ошибка при добавлении атрибутов:", error);
