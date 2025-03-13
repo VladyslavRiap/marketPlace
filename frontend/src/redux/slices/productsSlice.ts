@@ -1,14 +1,22 @@
 import { createAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../utils/api";
 
+export interface ProductAttribute {
+  attribute_id: number;
+  attribute_name: string;
+  attribute_value: string;
+}
+
 export interface Product {
   id: number;
   name: string;
   price: number;
-  category: string;
   description: string;
   image_url: string;
   user_id: number;
+  category: string;
+  subcategory: string;
+  attributes: ProductAttribute[];
   rating: string;
 }
 
@@ -45,6 +53,7 @@ export const fetchProducts = createAsyncThunk(
 );
 
 export const resetStatus = createAction("products/resetStatus");
+
 export const searchProducts = createAsyncThunk(
   "products/searchProducts",
   async (
@@ -125,13 +134,29 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
+export const addProductAttributes = createAsyncThunk(
+  "products/addProductAttributes",
+  async (
+    { productId, attributes }: { productId: number; attributes: any[] },
+    { rejectWithValue }
+  ) => {
+    try {
+      await api.post(`/products/${productId}/attributes`, { attributes });
+      return { productId, attributes };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data || "Ошибка при добавлении атрибутов"
+      );
+    }
+  }
+);
+
 const productsSlice = createSlice({
   name: "products",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-
       .addCase(fetchProducts.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -139,6 +164,7 @@ const productsSlice = createSlice({
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.items = action.payload.products;
+        state.totalPages = action.payload.totalPages;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.status = "failed";
@@ -203,6 +229,14 @@ const productsSlice = createSlice({
       })
       .addCase(resetStatus, (state) => {
         state.sellerStatus = "idle";
+      })
+
+      .addCase(addProductAttributes.fulfilled, (state, action) => {
+        state.status = "succeeded";
+      })
+      .addCase(addProductAttributes.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
       });
   },
 });

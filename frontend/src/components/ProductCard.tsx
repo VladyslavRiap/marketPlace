@@ -24,8 +24,8 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
-  onEdit?: (id: number) => void; // Функция для редактирования товара
-  onDelete?: (id: number) => void; // Функция для удаления товара
+  onEdit?: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({

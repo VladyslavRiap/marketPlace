@@ -10,6 +10,11 @@ import {
 } from "@/redux/slices/favoriteSlice";
 import { useSnackbarContext } from "@/context/SnackBarContext";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+interface ProductAttribute {
+  attribute_id: number;
+  attribute_name: string;
+  attribute_value: string;
+}
 
 interface Product {
   id: number;
@@ -19,6 +24,7 @@ interface Product {
   description: string;
   image_url: string;
   rating: number;
+  attributes: ProductAttribute[];
 }
 
 interface ProductPageProps {
@@ -30,6 +36,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   try {
     const { data } = await api.get(`products/${id}`);
+
     return {
       props: { product: data },
     };
@@ -45,7 +52,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { showMessage } = useSnackbarContext();
-
+  console.log(product);
   const favorites = useAppSelector((state) => state.favorite.favorites);
 
   const isFavorite = product
@@ -155,6 +162,33 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
             {isFavorite ? "❌ Удалить из избранного" : "❤️ В избранное"}
           </motion.button>
         </div>
+
+        {/* Таблица с аттрибутами товара */}
+        {product.attributes && product.attributes.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-xl font-semibold">Атрибуты товара:</h3>
+            <table className="min-w-full mt-4 table-auto border-collapse border border-gray-300">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2 border-b">Название атрибута</th>
+                  <th className="px-4 py-2 border-b">Значение</th>
+                </tr>
+              </thead>
+              <tbody>
+                {product.attributes.map((attribute) => (
+                  <tr key={attribute.attribute_id}>
+                    <td className="px-4 py-2 border-b">
+                      {attribute.attribute_name}
+                    </td>
+                    <td className="px-4 py-2 border-b">
+                      {attribute.attribute_value}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </motion.div>
   );

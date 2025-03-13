@@ -3,21 +3,6 @@ const queries = require("../queries/product.queries");
 
 const uploadFile = require("../services/s3");
 
-const validCategories = [
-  "Phones, tablets and laptops",
-  "Computers and peripheral devices",
-  "TV, audio and photo",
-  "Game",
-  "Large electrical appliances",
-  "Small electrical appliances",
-  "Fashion",
-  "Health and Beauty",
-  "Home, Garden and Pet Shop",
-  "Toys and children’s products",
-  "Sports and Leisure",
-  "Auto and DIY",
-  "Books, office and food",
-];
 class ProductController {
   static fabricGetMethod(baseQuery, hasFilters = false) {
     return async (req, res) => {
@@ -54,13 +39,15 @@ class ProductController {
           .json({ error: "Rating must be between 0 and 5" });
       }
 
-      if (category && !validCategories.includes(category)) {
-        return res.status(400).json({ error: "Invalid category" });
-      }
-
       const offset = (parsedPage - 1) * parsedLimit;
       let queryText = baseQuery;
-      let countQuery = `SELECT COUNT(*) FROM (${baseQuery}) AS total`;
+      let countQuery = `
+      SELECT COUNT(*) 
+      FROM products p
+      JOIN subcategories s ON p.subcategory_id = s.id
+      JOIN categories c ON s.category_id = c.id
+    `;
+
       let values = [];
       let valueIndex = 1;
 
@@ -68,19 +55,19 @@ class ProductController {
 
       if (hasFilters) {
         if (category) {
-          filters.push(`category = $${valueIndex++}`);
+          filters.push(`c.name = $${valueIndex++}`);
           values.push(category);
         }
         if (minPrice) {
-          filters.push(`price >= $${valueIndex++}`);
+          filters.push(`p.price >= $${valueIndex++}`);
           values.push(minPrice);
         }
         if (maxPrice) {
-          filters.push(`price <= $${valueIndex++}`);
+          filters.push(`p.price <= $${valueIndex++}`);
           values.push(maxPrice);
         }
         if (parsedRating !== null) {
-          filters.push(`rating >= $${valueIndex++}`);
+          filters.push(`p.rating >= $${valueIndex++}`);
           values.push(parsedRating);
         }
 
@@ -140,52 +127,105 @@ class ProductController {
 
   static async addProduct(req, res) {
     try {
-      const { name, price, category, description, image_url } = req.body;
+      const { name, price, description, subcategory_id } = req.body;
       const userId = req.user.userId;
 
-      if (!name || !price) {
-        return res.status(400).json({ error: "Name and price are required" });
+      if (!name || !price || !subcategory_id) {
+        return res
+          .status(400)
+          .json({ error: "Name, price, and subcategory are required" });
       }
 
-      let uploadedImageUrl = image_url || null;
+      let uploadedImageUrl = req.file
+        ? await uploadFile(
+            "marketplace-my-1-2-3-4",
+            req.file.originalname,
+            req.file.buffer
+          )
+        : null;
 
-      if (req.file) {
-        if (!req.file.mimetype.startsWith("image/")) {
-          return res
-            .status(400)
-            .json({ error: "Only image files are allowed" });
-        }
-
-        uploadedImageUrl = await uploadFile(
-          "marketplace-my-1-2-3-4",
-          req.file.originalname,
-          req.file.buffer
-        );
-      }
-
-      const result = await pool.query(queries.INSERT_PRODUCT, [
+      const productResult = await pool.query(queries.INSERT_PRODUCT, [
         name,
         price,
-        category,
         description,
         uploadedImageUrl,
         userId,
+        subcategory_id,
       ]);
 
-      res.status(201).json(result.rows[0]);
+      const productId = productResult.rows[0].id;
+
+      res.status(201).json({ id: productId });
     } catch (error) {
       console.error("Error adding new product:", error.message);
       res.status(500).json({ error: "Server error" });
     }
   }
+  static async addProductAttributes(req, res) {
+    const client = await pool.connect();
+
+    try {
+      const { productId } = req.params;
+      const { attributes } = req.body;
+
+      console.log(productId, attributes);
+
+      if (!productId || !attributes || attributes.length === 0) {
+        return res
+          .status(400)
+          .json({ error: "ProductId and attributes are required" });
+      }
+
+      await client.query("BEGIN");
+
+      const productCheck = await client.query(queries.CHECK_PRODUCT_EXISTENCE, [
+        productId,
+      ]);
+      if (productCheck.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      for (const attr of attributes) {
+        const attributeCheck = await client.query(
+          queries.CHECK_ATTRIBUTE_EXISTENCE,
+          [attr.attribute_id]
+        );
+
+        if (attributeCheck.rows.length === 0 || attr.attribute_id === 0) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            error: `Attribute with ID ${attr.attribute_id} does not exist or is invalid.`,
+          });
+        }
+
+        await client.query(queries.INSERT_PRODUCT_ATTRIBUTES, [
+          productId,
+          attr.attribute_id,
+          attr.value,
+        ]);
+      }
+
+      await client.query("COMMIT");
+      res.status(200).json({ message: "Attributes added successfully" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("Error adding product attributes:", error.message);
+      res.status(500).json({ error: "Server error" });
+    } finally {
+      client.release();
+    }
+  }
 
   static async updateProduct(req, res) {
     const { id } = req.params;
-    const { name, price, category, description } = req.body;
+    const { name, price, description, subcategory_id, attributes } = req.body;
     const userId = req.user.userId;
 
-    if (!name || !price) {
-      return res.status(400).json({ error: "Name and price are required" });
+    if (!name || !price || !subcategory_id) {
+      return res
+        .status(400)
+        .json({ error: "Name, price, and subcategory are required" });
     }
 
     try {
@@ -203,23 +243,9 @@ class ProductController {
           .json({ error: "You are not authorized to update this product" });
       }
 
-      const updatedFields = {};
-      if (name && name !== product.name) updatedFields.name = name;
-      if (price && price !== product.price) updatedFields.price = price;
-      if (category && category !== product.category)
-        updatedFields.category = category;
-      if (description && description !== product.description)
-        updatedFields.description = description;
-
       let uploadedImageUrl = product.image_url;
 
       if (req.file) {
-        if (!req.file.mimetype.startsWith("image/")) {
-          return res
-            .status(400)
-            .json({ error: "Only image files are allowed" });
-        }
-
         uploadedImageUrl = await uploadFile(
           "marketplace-my-1-2-3-4",
           req.file.originalname,
@@ -227,13 +253,13 @@ class ProductController {
         );
       }
 
-      if (uploadedImageUrl !== product.image_url) {
-        updatedFields.image_url = uploadedImageUrl;
-      }
-
-      if (Object.keys(updatedFields).length === 0) {
-        return res.status(400).json({ error: "No changes to update" });
-      }
+      const updatedFields = {
+        name,
+        price,
+        description,
+        image_url: uploadedImageUrl,
+        subcategory_id,
+      };
 
       const updateColumns = Object.keys(updatedFields)
         .map(
@@ -250,6 +276,18 @@ class ProductController {
         RETURNING *;
       `;
       const result = await pool.query(updateQuery, [...updateValues, id]);
+
+      await pool.query(queries.DELETE_PRODUCT_ATTRIBUTES, [id]);
+
+      if (attributes && attributes.length > 0) {
+        for (const attr of attributes) {
+          await pool.query(queries.INSERT_PRODUCT_ATTRIBUTES, [
+            id,
+            attr.attribute_id,
+            attr.value,
+          ]);
+        }
+      }
 
       res.json(result.rows[0]);
     } catch (error) {
@@ -275,10 +313,41 @@ class ProductController {
           .json({ error: "You are not authorized to delete this product" });
       }
 
+      await pool.query(queries.DELETE_PRODUCT_ATTRIBUTES, [id]);
       await pool.query(queries.DELETE_PRODUCT, [id]);
       res.json({ message: "Product successfully deleted" });
     } catch (error) {
       console.error("Error deleting product:", error.message);
+      res.status(500).json({ error: "Server error" });
+    }
+  }
+
+  static async getSubcategoriesByCategoryId(req, res) {
+    const { categoryId } = req.params;
+
+    try {
+      const result = await pool.query(
+        queries.GET_SUBCATEGORIES_BY_CATEGORY_ID,
+        [categoryId]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching subcategories:", error.message);
+      res.status(500).json({ error: "Server error" });
+    }
+  }
+
+  static async getAttributesBySubcategoryId(req, res) {
+    const { subcategoryId } = req.params;
+
+    try {
+      const result = await pool.query(
+        queries.GET_ATTRIBUTES_BY_SUBCATEGORY_ID,
+        [subcategoryId]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching attributes:", error.message);
       res.status(500).json({ error: "Server error" });
     }
   }
@@ -353,15 +422,22 @@ class ProductController {
       res.status(500).json({ error: "Cannot fetch seller products" });
     }
   }
+  static async getCategories(req, res) {
+    try {
+      const result = await pool.query("SELECT id, name FROM categories");
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Ошибка при получении категорий:", error.message);
+      res.status(500).json({ error: "Ошибка сервера" });
+    }
+  }
 }
+
 ProductController.getProducts = ProductController.fabricGetMethod(
   queries.GET_PRODUCTS,
   true
 );
-// ProductController.searchProducts = ProductController.fabricGetMethod(
-//   queries.GET_PRODUCTS,
-//   true
-// );
+
 ProductController.filterProducts = ProductController.fabricGetMethod(
   queries.GET_PRODUCTS,
   true

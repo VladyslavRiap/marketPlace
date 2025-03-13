@@ -10,6 +10,7 @@ import { Trash2 } from "lucide-react";
 import { useSnackbarContext } from "@/context/SnackBarContext";
 import Link from "next/link";
 import api from "@/utils/api";
+import Image from "next/image";
 
 interface Product {
   id: number;
@@ -18,6 +19,7 @@ interface Product {
   category: string;
   description: string;
   image_url: string;
+  rating: string;
 }
 
 interface FavoritesPageProps {
@@ -49,7 +51,11 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
   };
 
   if (loading) {
-    return <div>Загрузка...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
@@ -59,33 +65,66 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <h1 className="text-3xl font-bold mb-6">Избранные товары</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">
+        Избранные товары
+      </h1>
 
       {favorites.length === 0 ? (
-        <p className="text-gray-600">У вас пока нет избранных товаров.</p>
+        <p className="text-gray-600 text-center text-lg">
+          У вас пока нет избранных товаров.
+        </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {favorites.map((product) => (
-            <div key={product.id} className="bg-white shadow-lg rounded-lg p-4">
-              <Link href={`/products/${product.id}`}>
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded-lg mb-4"
-                />
-                <h2 className="text-xl font-semibold mb-2">{product.name}</h2>
-                <p className="text-gray-600 mb-2">{product.description}</p>
-                <p className="text-lg font-bold">${product.price}</p>
-              </Link>
-              <div className="flex justify-end mt-4">
+            <motion.div
+              key={product.id}
+              className="bg-white shadow-lg rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-green-500/30 transition-shadow duration-300"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="relative w-full h-40">
+                <Link href={`/products/${product.id}`} passHref>
+                  <div className="w-full h-full relative">
+                    {product.image_url ? (
+                      <Image
+                        src={product.image_url}
+                        alt={product.name}
+                        layout="fill"
+                        objectFit="cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-700">
+                        Изображение не доступно
+                      </div>
+                    )}
+                  </div>
+                </Link>
+
                 <button
                   onClick={() => handleRemoveFromFavorites(product.id)}
-                  className="text-red-600 hover:text-red-800"
+                  className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition"
                 >
-                  <Trash2 className="w-6 h-6" />
+                  <Trash2 className="w-5 h-5 text-red-500 hover:text-white" />
                 </button>
               </div>
-            </div>
+
+              <div className="p-4">
+                <Link href={`/products/${product.id}`} passHref>
+                  <h2 className="text-lg font-semibold text-gray-800 hover:text-green-600 transition">
+                    {product.name}
+                  </h2>
+                </Link>
+                <p className="text-gray-600 text-sm mt-2 line-clamp-2">
+                  {product.description}
+                </p>
+                <div className="flex justify-between items-center mt-4">
+                  <span className="text-red-600 text-lg font-bold">
+                    ${product.price}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
           ))}
         </div>
       )}

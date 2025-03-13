@@ -58,7 +58,6 @@ const Home: React.FC<HomeProps> = ({
 }) => {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
-
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [currentPage, setCurrentPage] = useState(initialCurrentPage);
   const [category, setCategory] = useState(router.query.category || "");
@@ -100,7 +99,6 @@ const Home: React.FC<HomeProps> = ({
     const fetchFilteredProducts = async () => {
       try {
         const { data } = await api.get("/products", { params: router.query });
-        console.log(data.totalPages);
         setProducts(data.products);
         setTotalPages(data.totalPages);
         setCurrentPage(data.currentPage);
@@ -116,6 +114,7 @@ const Home: React.FC<HomeProps> = ({
       setCurrentPage(newPage);
     }
   };
+
   const handleStarClick = (starValue: number) => {
     setRating((prevRating) => (prevRating === starValue ? null : starValue));
   };

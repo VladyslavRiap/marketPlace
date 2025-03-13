@@ -16,8 +16,10 @@ const upload = multer({
     }
   },
 });
-router.get("/mine", authMiddleware, productController.getSellerProducts);
 
+router.get("/mine", authMiddleware, productController.getSellerProducts);
+router.get("/categories", productController.getCategories);
+router.post("/:productId/attributes", productController.addProductAttributes);
 /**
  * @swagger
  * /api/products:
@@ -56,10 +58,23 @@ router.get("/mine", authMiddleware, productController.getSellerProducts);
  *                     type: string
  *                   price:
  *                     type: number
+ *                   description:
+ *                     type: string
+ *                   image_url:
+ *                     type: string
  *                   category:
  *                     type: string
- *                   rating:
- *                     type: number
+ *                   subcategory:
+ *                     type: string
+ *                   attributes:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         attribute_name:
+ *                           type: string
+ *                         attribute_value:
+ *                           type: string
  *       500:
  *         description: Server error
  */
@@ -87,18 +102,6 @@ router.get("/", productController.getProducts);
  *         schema:
  *           type: integer
  *         description: Number of products per page (default is 10)
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *           enum: [price, rating, name]
- *         description: Sort by field (price, rating, name)
- *       - in: query
- *         name: order
- *         schema:
- *           type: string
- *           enum: [asc, desc]
- *         description: Sort order (asc or desc)
  *     responses:
  *       200:
  *         description: List of products matching the search query
@@ -115,10 +118,14 @@ router.get("/", productController.getProducts);
  *                     type: string
  *                   price:
  *                     type: number
+ *                   description:
+ *                     type: string
+ *                   image_url:
+ *                     type: string
  *                   category:
  *                     type: string
- *                   rating:
- *                     type: number
+ *                   subcategory:
+ *                     type: string
  *       500:
  *         description: Server error
  */
@@ -177,10 +184,14 @@ router.get("/search", productController.searchProducts);
  *                     type: string
  *                   price:
  *                     type: number
+ *                   description:
+ *                     type: string
+ *                   image_url:
+ *                     type: string
  *                   category:
  *                     type: string
- *                   rating:
- *                     type: number
+ *                   subcategory:
+ *                     type: string
  *       500:
  *         description: Server error
  */
@@ -213,10 +224,23 @@ router.get("/filter", productController.filterProducts);
  *                   type: string
  *                 price:
  *                   type: number
+ *                 description:
+ *                   type: string
+ *                 image_url:
+ *                   type: string
  *                 category:
  *                   type: string
- *                 rating:
- *                   type: number
+ *                 subcategory:
+ *                   type: string
+ *                 attributes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       attribute_name:
+ *                         type: string
+ *                       attribute_value:
+ *                         type: string
  *       404:
  *         description: Product not found
  *       500:
@@ -241,23 +265,33 @@ router.get("/:id", productController.getProductById);
  *             required:
  *               - name
  *               - price
+ *               - subcategory_id
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Nike Air Max"
+ *                 example: "iPhone 13"
  *               price:
  *                 type: number
- *                 example: 199.99
- *               category:
- *                 type: string
- *                 example: "Fashion"
+ *                 example: 999.99
+ *               subcategory_id:
+ *                 type: integer
+ *                 example: 1
  *               description:
  *                 type: string
- *                 example: "Comfortable running shoes"
+ *                 example: "Latest smartphone from Apple"
  *               image:
  *                 type: string
  *                 format: binary
  *                 description: Image file to upload
+ *               attributes:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     attribute_id:
+ *                       type: integer
+ *                     value:
+ *                       type: string
  *     responses:
  *       201:
  *         description: Product successfully added
@@ -273,12 +307,15 @@ router.post(
   upload.single("image"),
   productController.addProduct
 );
+
 /**
  * @swagger
  * /api/products/{id}:
  *   put:
  *     summary: Update product by ID
  *     tags: [Products]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -289,28 +326,35 @@ router.post(
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Nike Air Max"
+ *                 example: "iPhone 13 Pro"
  *               price:
  *                 type: number
- *                 example: 199.99
- *               category:
- *                 type: string
- *                 example: "Fashion"
+ *                 example: 1099.99
+ *               subcategory_id:
+ *                 type: integer
+ *                 example: 1
  *               description:
  *                 type: string
- *                 example: "Comfortable running shoes"
- *               image_url:
+ *                 example: "Latest smartphone from Apple"
+ *               image:
  *                 type: string
- *                 example: "https://example.com/image.jpg"
- *               rating:
- *                 type: number
- *                 example: 4.5
+ *                 format: binary
+ *                 description: Image file to upload
+ *               attributes:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     attribute_id:
+ *                       type: integer
+ *                     value:
+ *                       type: string
  *     responses:
  *       200:
  *         description: Product successfully updated
@@ -335,6 +379,8 @@ router.put(
  *   delete:
  *     summary: Delete product by ID
  *     tags: [Products]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -355,6 +401,78 @@ router.delete(
   authMiddleware,
   checkRole(["admin", "seller"]),
   productController.deleteProduct
+);
+
+/**
+ * @swagger
+ * /api/products/categories/{categoryId}/subcategories:
+ *   get:
+ *     summary: Get subcategories by category ID
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID of the category
+ *     responses:
+ *       200:
+ *         description: List of subcategories
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  "/categories/:categoryId/subcategories",
+  productController.getSubcategoriesByCategoryId
+);
+
+/**
+ * @swagger
+ * /api/subcategories/{subcategoryId}/attributes:
+ *   get:
+ *     summary: Get attributes by subcategory ID
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: subcategoryId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID of the subcategory
+ *     responses:
+ *       200:
+ *         description: List of attributes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  "/subcategories/:subcategoryId/attributes",
+  productController.getAttributesBySubcategoryId
 );
 
 module.exports = router;
