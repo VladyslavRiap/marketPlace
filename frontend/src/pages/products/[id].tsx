@@ -10,6 +10,9 @@ import {
 } from "@/redux/slices/favoriteSlice";
 import { useSnackbarContext } from "@/context/SnackBarContext";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { Star } from "lucide-react";
+import getAttributeIcon from "@/utils/iconutils";
+
 interface ProductAttribute {
   attribute_id: number;
   attribute_name: string;
@@ -52,7 +55,6 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { showMessage } = useSnackbarContext();
-  console.log(product);
   const favorites = useAppSelector((state) => state.favorite.favorites);
 
   const isFavorite = product
@@ -98,98 +100,101 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
 
   return (
     <motion.div
-      className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-8"
+      className="container mx-auto p-6"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.div
-        whileHover={{ scale: 1.05 }}
-        transition={{ duration: 0.3 }}
-        className="rounded-lg shadow-md"
-      >
-        <Image
-          src={product.image_url}
-          alt={product.name}
-          width={500}
-          height={500}
-          className="w-full h-96 object-cover rounded-lg"
-        />
-      </motion.div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          transition={{ duration: 0.3 }}
+          className="rounded-lg shadow-md"
+        >
+          <Image
+            src={product.image_url}
+            alt={product.name}
+            width={500}
+            height={500}
+            className="w-full h-96 object-cover rounded-lg"
+          />
+        </motion.div>
 
-      <div>
-        <motion.h1
-          className="text-3xl font-bold text-gray-800"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+        <div>
+          <motion.h1
+            className="text-3xl font-bold text-gray-800"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {product.name}
+          </motion.h1>
+          <p className="text-yellow-500 text-lg flex items-center gap-2">
+            <Star className="w-5 h-5" /> {product.rating || 0} / 5
+          </p>
+
+          <div className="mt-4">
+            {product.oldPrice && (
+              <span className="text-gray-500 line-through text-lg">
+                ${product.oldPrice}
+              </span>
+            )}
+            <span className="text-red-600 text-2xl font-bold ml-2">
+              ${product.price}
+            </span>
+          </div>
+
+          <div className="mt-6 flex gap-4">
+            <motion.button
+              className="bg-blue-600 text-white px-6 py-3 rounded-md text-lg font-semibold shadow-md hover:bg-blue-700"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Добавить в корзину
+            </motion.button>
+            <motion.button
+              className={`border px-6 py-3 rounded-md text-lg font-semibold hover:bg-gray-100 ${
+                isFavorite ? "border-red-600 text-red-600" : "border-gray-400"
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleFavoriteToggle}
+            >
+              {isFavorite ? "❌ Удалить из избранного" : "❤️ В избранное"}
+            </motion.button>
+          </div>
+        </div>
+      </div>
+
+      {product.attributes && product.attributes.length > 0 && (
+        <motion.div
+          className="mt-8 bg-gray-50 p-6 rounded-lg shadow-sm"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {product.name}
-        </motion.h1>
-        <p className="text-yellow-500 text-lg">⭐ {product.rating} / 5</p>
-
-        <div className="mt-4">
-          {product.oldPrice && (
-            <span className="text-gray-500 line-through text-lg">
-              ${product.oldPrice}
-            </span>
-          )}
-          <span className="text-red-600 text-2xl font-bold ml-2">
-            ${product.price}
-          </span>
-        </div>
-
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold">Выберите размер:</h3>
-        </div>
-
-        <div className="mt-6 flex gap-4">
-          <motion.button
-            className="bg-blue-600 text-white px-6 py-3 rounded-md text-lg font-semibold shadow-md hover:bg-blue-700"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Добавить в корзину
-          </motion.button>
-          <motion.button
-            className={`border px-6 py-3 rounded-md text-lg font-semibold hover:bg-gray-100 ${
-              isFavorite ? "border-red-600 text-red-600" : "border-gray-400"
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleFavoriteToggle}
-          >
-            {isFavorite ? "❌ Удалить из избранного" : "❤️ В избранное"}
-          </motion.button>
-        </div>
-
-        {/* Таблица с аттрибутами товара */}
-        {product.attributes && product.attributes.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-xl font-semibold">Атрибуты товара:</h3>
-            <table className="min-w-full mt-4 table-auto border-collapse border border-gray-300">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 border-b">Название атрибута</th>
-                  <th className="px-4 py-2 border-b">Значение</th>
-                </tr>
-              </thead>
-              <tbody>
-                {product.attributes.map((attribute) => (
-                  <tr key={attribute.attribute_id}>
-                    <td className="px-4 py-2 border-b">
+          <h3 className="text-xl font-semibold mb-4 text-center">
+            Атрибуты товара:
+          </h3>
+          <table className="min-w-full table-auto border-collapse">
+            <tbody>
+              {product.attributes.map((attribute) => (
+                <tr key={attribute.attribute_id} className="border-b">
+                  <td className="px-4 py-3 flex items-center gap-3">
+                    {getAttributeIcon(attribute.attribute_name)}
+                    <span className="text-gray-700 font-medium">
                       {attribute.attribute_name}
-                    </td>
-                    <td className="px-4 py-2 border-b">
-                      {attribute.attribute_value}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {attribute.attribute_value}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </motion.div>
+      )}
     </motion.div>
   );
 };

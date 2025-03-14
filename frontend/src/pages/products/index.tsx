@@ -7,31 +7,20 @@ import api from "@/utils/api";
 import Slider from "@mui/material/Slider";
 import { FaStar } from "react-icons/fa";
 
-const validCategories = [
-  "Phones, tablets and laptops",
-  "Computers and peripheral devices",
-  "TV, audio and photo",
-  "Game",
-  "Large electrical appliances",
-  "Small electrical appliances",
-  "Fashion",
-  "Health and Beauty",
-  "Home, Garden and Pet Shop",
-  "Toys and children’s products",
-  "Sports and Leisure",
-  "Auto and DIY",
-  "Books, office and food",
-];
-
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { query } = context;
   try {
-    const { data } = await api.get("/products", { params: query });
+    const [productsResponse, categoriesResponse] = await Promise.all([
+      api.get("/products", { params: query }),
+      api.get("/products/categories"),
+    ]);
+
     return {
       props: {
-        initialProducts: data.products || [],
-        initialTotalPages: data.totalPages || 1,
-        initialCurrentPage: data.currentPage || 1,
+        initialProducts: productsResponse.data.products || [],
+        initialTotalPages: productsResponse.data.totalPages || 1,
+        initialCurrentPage: productsResponse.data.currentPage || 1,
+        categories: categoriesResponse.data || [],
       },
     };
   } catch (error) {
@@ -40,6 +29,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         initialProducts: [],
         initialTotalPages: 1,
         initialCurrentPage: 1,
+        categories: [],
       },
     };
   }
@@ -49,12 +39,13 @@ interface HomeProps {
   initialProducts: Product[];
   initialTotalPages: number;
   initialCurrentPage: number;
+  categories: string[];
 }
-
 const Home: React.FC<HomeProps> = ({
   initialProducts,
   initialTotalPages,
   initialCurrentPage,
+  categories,
 }) => {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
@@ -132,9 +123,9 @@ const Home: React.FC<HomeProps> = ({
           className="p-2 border rounded"
         >
           <option value="">All Categories</option>
-          {validCategories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
+          {categories.map((cat: any) => (
+            <option key={cat.id} value={cat.name}>
+              {cat.name}
             </option>
           ))}
         </select>
