@@ -18,7 +18,7 @@ const AttributeForm: React.FC<AttributeFormProps> = ({
   const [values, setValues] = useState<
     { attribute_id: number; value: string }[]
   >([]);
-
+  console.log(subcategoryId);
   useEffect(() => {
     const fetchAttributes = async () => {
       if (subcategoryId) {

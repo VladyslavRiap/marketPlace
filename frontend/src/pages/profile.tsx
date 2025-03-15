@@ -3,14 +3,19 @@ import { GetServerSideProps } from "next";
 import api from "@/utils/api";
 import { motion } from "framer-motion";
 import { useAppDispatch } from "@/redux/hooks";
-import { logoutUser } from "@/redux/slices/authSlice";
+import {
+  logoutUser,
+  updateAvatar,
+  updateName,
+  updatePassword,
+  updatePhone,
+} from "@/redux/slices/authSlice";
 import { useRouter } from "next/router";
 import {
   LogOut,
   User,
   Mail,
   Phone,
-  BadgePlus,
   ShoppingCart,
   Edit,
   Camera,
@@ -21,6 +26,14 @@ import {
 import { useSnackbarContext } from "@/context/SnackBarContext";
 import { clearCartRedux, fetchCart } from "@/redux/slices/cartSlice";
 import { clearFavorites, fetchFavorites } from "@/redux/slices/favoriteSlice";
+import {
+  Dialog,
+  DialogBackdrop,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
+import { Fragment } from "react";
 
 const ProfilePage = ({ user: initialUser }: { user: any }) => {
   const dispatch = useAppDispatch();
@@ -36,6 +49,7 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
   const [oldPassword, setOldPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(initialUser);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     dispatch(fetchFavorites());
@@ -47,6 +61,7 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
     dispatch(clearCartRedux());
     dispatch(clearFavorites());
     router.push("/login");
+    setIsLogoutModalOpen(false);
   };
 
   const handleUpdateName = async () => {
@@ -55,11 +70,10 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
       return;
     }
     try {
-      await api.put("/users/me", { name: newName });
+      await dispatch(updateName(newName)).unwrap();
       setEditName(false);
       setUser((prevUser: any) => ({ ...prevUser, name: newName }));
       showMessage("Имя обновлено успешно!", "success");
-      router.replace(router.asPath);
     } catch (error: any) {
       showMessage("Ошибка при обновлении имени: " + error.message, "error");
     }
@@ -75,11 +89,10 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
     }
 
     try {
-      await api.put("/users/me/update-mobnumber", { mobnumber: newPhone });
+      await dispatch(updatePhone(newPhone)).unwrap();
       setEditPhone(false);
       setUser((prevUser: any) => ({ ...prevUser, mobnumber: newPhone }));
       showMessage("Номер телефона обновлен успешно!", "success");
-      router.replace(router.asPath);
     } catch (error: any) {
       console.error("Ошибка при обновлении телефона:", error.message);
       showMessage("Ошибка при обновлении телефона: " + error.message, "error");
@@ -92,7 +105,7 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
       return;
     }
     try {
-      await api.put("/users/me/password", { oldPassword, newPassword });
+      await dispatch(updatePassword({ oldPassword, newPassword })).unwrap();
       setEditPassword(false);
       showMessage("Пароль обновлен успешно!", "success");
       router.replace(router.asPath);
@@ -112,14 +125,10 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
     setLoading(true);
 
     try {
-      const { data } = await api.put("/users/me/avatar", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setUser({ ...user, avatar_url: data.avatarUrl });
+      const data = await dispatch(updateAvatar(formData)).unwrap();
       setLoading(false);
+      setUser({ ...user, avatar_url: data.avatarUrl });
       showMessage("Аватар обновлен успешно!", "success");
-      router.replace(router.asPath);
     } catch (error: any) {
       console.error("Ошибка при загрузке аватара:", error.message);
       setLoading(false);
@@ -135,12 +144,12 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
 
   return (
     <motion.div
-      className="flex min-h-full bg-gray-100 p-6"
+      className="flex  bg-gray-50 p-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex space-x-6 w-full max-w-4xl mx-auto ">
+      <div className="flex flex-col justify-center md:flex-row space-y-6 md:space-y-0 md:space-x-6 w-full max-w-6xl mx-auto">
         <div className="bg-white shadow-lg rounded-xl p-8 flex-1 max-w-md">
           <h2 className="text-center mb-6 text-3xl font-bold text-gray-800">
             Данные аккаунта
@@ -151,7 +160,7 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
               <img
                 src={user.avatar_url}
                 alt="Аватар"
-                className="w-52 h-52 rounded-full border-2 border-blue-500 object-cover"
+                className="w-52 h-52 rounded-full border-4 border-blue-500 object-cover"
               />
             ) : (
               <User className="w-28 h-28 text-blue-600 bg-blue-100 p-3 rounded-full mb-4" />
@@ -294,7 +303,7 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
           )}
 
           <button
-            onClick={handleLogout}
+            onClick={() => setIsLogoutModalOpen(true)}
             className="mt-6 flex items-center justify-center w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-300"
           >
             <LogOut className="w-5 h-5 mr-2" />
@@ -320,6 +329,76 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
           </div>
         )}
       </div>
+
+      <Transition appear show={isLogoutModalOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="fixed inset-0 z-10 overflow-y-auto"
+          onClose={() => setIsLogoutModalOpen(false)}
+        >
+          <div className="min-h-screen px-4 text-center">
+            <TransitionChild
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <DialogBackdrop className="fixed inset-0 bg-black bg-opacity-30" />
+            </TransitionChild>
+
+            <span
+              className="inline-block h-screen align-middle"
+              aria-hidden="true"
+            >
+              &#8203;
+            </span>
+
+            <TransitionChild
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+                <DialogTitle
+                  as="h3"
+                  className="text-lg font-medium leading-6 text-gray-900"
+                >
+                  Выход из аккаунта
+                </DialogTitle>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    Вы уверены, что хотите выйти из аккаунта?
+                  </p>
+                </div>
+
+                <div className="mt-4 flex justify-end space-x-4">
+                  <button
+                    type="button"
+                    className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                    onClick={() => setIsLogoutModalOpen(false)}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
+                    onClick={handleLogout}
+                  >
+                    Выйти
+                  </button>
+                </div>
+              </div>
+            </TransitionChild>
+          </div>
+        </Dialog>
+      </Transition>
     </motion.div>
   );
 };

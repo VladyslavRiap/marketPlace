@@ -11,6 +11,8 @@ import { motion } from "framer-motion";
 import { Trash2, Plus, Minus } from "lucide-react";
 import { useSnackbarContext } from "@/context/SnackBarContext";
 import Link from "next/link";
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment } from "react";
 
 interface CartItem {
   id: number;
@@ -31,22 +33,21 @@ interface CartPageProps {
 const CartPage = ({ initialCart }: CartPageProps) => {
   const dispatch = useAppDispatch();
   const { showMessage } = useSnackbarContext();
-
   const [localCart, setLocalCart] = useState(initialCart.items);
   const [totalAmount, setTotalAmount] = useState(initialCart.totalAmount);
+  const [isClearCartOpen, setIsClearCartOpen] = useState(false);
 
   const handleRemove = async (productId: number) => {
     try {
       await dispatch(removeFromCart(productId)).unwrap();
       const updatedCart = localCart.filter((item) => item.id !== productId);
       setLocalCart(updatedCart);
-
-      const updatedTotalAmount = updatedCart.reduce(
-        (acc, item) => acc + (Number(item.total_price) || 0),
-        0
+      setTotalAmount(
+        updatedCart.reduce(
+          (acc, item) => acc + (Number(item.total_price) || 0),
+          0
+        )
       );
-      setTotalAmount(updatedTotalAmount);
-
       showMessage("Товар удален из корзины", "success");
     } catch (error: any) {
       showMessage("Ошибка: " + error.message, "error");
@@ -91,6 +92,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
       setLocalCart([]);
       setTotalAmount(0);
       showMessage("Корзина очищена", "success");
+      setIsClearCartOpen(false);
     } catch (error: any) {
       showMessage("Ошибка: " + error.message, "error");
     }
@@ -126,8 +128,11 @@ const CartPage = ({ initialCart }: CartPageProps) => {
 
             <div className="space-y-6">
               {localCart.map((item) => (
-                <div
+                <motion.div
                   key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
                   className="grid grid-cols-1 md:grid-cols-5 items-center p-6 bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 ease-in-out"
                 >
                   <Link
@@ -173,7 +178,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
                       <Trash2 className="w-7 h-7" />
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
 
@@ -186,7 +191,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
               </p>
 
               <button
-                onClick={handleClearCart}
+                onClick={() => setIsClearCartOpen(true)}
                 className="mt-4 md:mt-0 bg-red-500 text-white px-8 py-4 rounded-lg hover:bg-red-600 transition text-xl"
               >
                 Очистить корзину
@@ -195,6 +200,71 @@ const CartPage = ({ initialCart }: CartPageProps) => {
           </>
         )}
       </div>
+
+      <Transition appear show={isClearCartOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsClearCartOpen(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Очистить корзину
+                  </Dialog.Title>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">
+                      Вы уверены, что хотите очистить корзину?
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex justify-end space-x-4">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                      onClick={() => setIsClearCartOpen(false)}
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-red-500 border border-transparent rounded-md hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
+                      onClick={handleClearCart}
+                    >
+                      Очистить
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </motion.div>
   );
 };
@@ -209,4 +279,5 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
     return { redirect: { destination: "/login", permanent: false } };
   }
 };
+
 export default CartPage;

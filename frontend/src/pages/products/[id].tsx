@@ -10,7 +10,7 @@ import {
 } from "@/redux/slices/favoriteSlice";
 import { useSnackbarContext } from "@/context/SnackBarContext";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { Star } from "lucide-react";
+import { Star, Heart, ShoppingCart } from "lucide-react";
 import getAttributeIcon from "@/utils/iconutils";
 
 interface ProductAttribute {
@@ -88,7 +88,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
         <p>Товар не найден</p>
         <motion.button
           onClick={() => router.push("/")}
-          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="mt-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:to-indigo-600 transition"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -109,27 +109,27 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
         <motion.div
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.3 }}
-          className="rounded-lg shadow-md"
+          className="rounded-lg shadow-lg overflow-hidden"
         >
           <Image
             src={product.image_url}
             alt={product.name}
-            width={500}
-            height={500}
-            className="w-full h-96 object-cover rounded-lg"
+            width={2000}
+            height={2000}
+            className="w-full h-96 object-cover rounded-lg hover:scale-105 transition-transform duration-300"
           />
         </motion.div>
 
         <div>
           <motion.h1
-            className="text-3xl font-bold text-gray-800"
+            className="text-4xl font-bold text-gray-900"
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
             {product.name}
           </motion.h1>
-          <p className="text-yellow-500 text-lg flex items-center gap-2">
+          <p className="text-yellow-500 text-lg flex items-center gap-2 mt-2">
             <Star className="w-5 h-5" /> {product.rating || 0} / 5
           </p>
 
@@ -139,28 +139,32 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
                 ${product.oldPrice}
               </span>
             )}
-            <span className="text-red-600 text-2xl font-bold ml-2">
+            <span className="text-indigo-600 text-3xl font-bold ml-2">
               ${product.price}
             </span>
           </div>
 
           <div className="mt-6 flex gap-4">
             <motion.button
-              className="bg-blue-600 text-white px-6 py-3 rounded-md text-lg font-semibold shadow-md hover:bg-blue-700"
+              className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-md hover:from-indigo-700 hover:to-indigo-600 transition"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
+              <ShoppingCart className="inline-block w-5 h-5 mr-2" />
               Добавить в корзину
             </motion.button>
             <motion.button
-              className={`border px-6 py-3 rounded-md text-lg font-semibold hover:bg-gray-100 ${
-                isFavorite ? "border-red-600 text-red-600" : "border-gray-400"
+              className={`border px-6 py-3 rounded-lg text-lg font-semibold shadow-md transition ${
+                isFavorite
+                  ? "border-red-600 text-red-600 hover:bg-red-50"
+                  : "border-gray-400 text-gray-700 hover:bg-gray-50"
               }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleFavoriteToggle}
             >
-              {isFavorite ? "❌ Удалить из избранного" : "❤️ В избранное"}
+              <Heart className="inline-block w-5 h-5 mr-2" />
+              {isFavorite ? "Удалить из избранного" : "В избранное"}
             </motion.button>
           </div>
         </div>
@@ -168,31 +172,30 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
 
       {product.attributes && product.attributes.length > 0 && (
         <motion.div
-          className="mt-8 bg-gray-50 p-6 rounded-lg shadow-sm"
+          className="mt-8 bg-white p-6 rounded-lg shadow-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h3 className="text-xl font-semibold mb-4 text-center">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             Атрибуты товара:
           </h3>
-          <table className="min-w-full table-auto border-collapse">
-            <tbody>
-              {product.attributes.map((attribute) => (
-                <tr key={attribute.attribute_id} className="border-b">
-                  <td className="px-4 py-3 flex items-center gap-3">
-                    {getAttributeIcon(attribute.attribute_name)}
-                    <span className="text-gray-700 font-medium">
-                      {attribute.attribute_name}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {attribute.attribute_value}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {product.attributes.map((attribute) => (
+              <div
+                key={attribute.attribute_id}
+                className="bg-gray-50 p-4 rounded-lg flex items-center gap-3"
+              >
+                {getAttributeIcon(attribute.attribute_name)}
+                <div>
+                  <p className="text-gray-700 font-medium">
+                    {attribute.attribute_name}
+                  </p>
+                  <p className="text-gray-600">{attribute.attribute_value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </motion.div>
       )}
     </motion.div>

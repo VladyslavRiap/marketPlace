@@ -53,7 +53,7 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
@@ -65,7 +65,7 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">
+      <h1 className="text-4xl font-bold mb-8 text-gray-900 text-center">
         Избранные товары
       </h1>
 
@@ -78,12 +78,12 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
           {favorites.map((product) => (
             <motion.div
               key={product.id}
-              className="bg-white shadow-lg rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-green-500/30 transition-shadow duration-300"
+              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition-shadow duration-300"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="relative w-full h-40">
+              <div className="relative w-full h-48">
                 <Link href={`/products/${product.id}`} passHref>
                   <div className="w-full h-full relative">
                     {product.image_url ? (
@@ -92,9 +92,10 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
                         alt={product.name}
                         layout="fill"
                         objectFit="cover"
+                        className="hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-700">
+                      <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-500">
                         Изображение не доступно
                       </div>
                     )}
@@ -103,15 +104,15 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
 
                 <button
                   onClick={() => handleRemoveFromFavorites(product.id)}
-                  className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition"
+                  className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition"
                 >
                   <Trash2 className="w-5 h-5 text-red-500 hover:text-white" />
                 </button>
               </div>
 
-              <div className="p-4">
+              <div className="p-5">
                 <Link href={`/products/${product.id}`} passHref>
-                  <h2 className="text-lg font-semibold text-gray-800 hover:text-green-600 transition">
+                  <h2 className="text-xl font-bold text-gray-900 hover:text-indigo-600 transition">
                     {product.name}
                   </h2>
                 </Link>
@@ -119,7 +120,7 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
                   {product.description}
                 </p>
                 <div className="flex justify-between items-center mt-4">
-                  <span className="text-red-600 text-lg font-bold">
+                  <span className="text-indigo-600 text-xl font-bold">
                     ${product.price}
                   </span>
                 </div>

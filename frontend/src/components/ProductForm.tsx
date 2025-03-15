@@ -6,42 +6,35 @@ import PriceInput from "./PriceInput";
 
 interface ProductFormProps {
   initialProduct?: Product | null;
-  categories: { id: number; name: string }[];
-  subcategories: { id: number; name: string }[];
   onSubmit: (formData: FormData) => void;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({
   initialProduct,
-  categories,
-  subcategories,
   onSubmit,
 }) => {
   const [product, setProduct] = useState({
     name: initialProduct?.name || "",
     description: initialProduct?.description || "",
     price: initialProduct?.price || 0,
-    category_id: 0,
-    subcategory_id: 0,
+    category_id: initialProduct?.category ? Number(initialProduct.category) : 0,
+    subcategory_id: initialProduct?.subcategory
+      ? Number(initialProduct.subcategory)
+      : 0,
   });
+
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(
     initialProduct?.image_url || null
   );
 
-  useEffect(() => {
-    if (initialProduct) {
-      setProduct((prev) => ({
-        ...prev,
-        category_id:
-          categories.find((cat) => cat.name === initialProduct.category)?.id ||
-          0,
-        subcategory_id:
-          subcategories.find((sub) => sub.name === initialProduct.subcategory)
-            ?.id || 0,
-      }));
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const file = e.target.files[0];
+      setImage(file);
+      setPreview(URL.createObjectURL(file));
     }
-  }, [initialProduct, categories, subcategories]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,9 +66,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
       />
       <PriceInput
         value={product.price}
-        onChange={(val) => setProduct({ ...product, price: val })}
+        onChange={(val: number) => setProduct({ ...product, price: val })}
       />
+
       <ImageUploader onImageSelect={setImage} initialPreview={preview} />
+
       <CategorySelector
         categoryId={product.category_id}
         subcategoryId={product.subcategory_id}
@@ -86,11 +81,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
           setProduct({ ...product, subcategory_id: id })
         }
       />
+
       <button
         type="submit"
-        className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
       >
-        {initialProduct ? "Сохранить" : "Далее"}
+        Далее
       </button>
     </form>
   );

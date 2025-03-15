@@ -6,7 +6,7 @@ import { loginUser, fetchUser } from "@/redux/slices/authSlice";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useSnackbarContext } from "@/context/SnackBarContext";
-import { cookies } from "next/headers";
+import { motion } from "framer-motion";
 
 const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const dispatch = useAppDispatch();
@@ -17,6 +17,7 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const [error, setError] = useState<string | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const { showMessage } = useSnackbarContext();
+
   useEffect(() => {
     if (isAuthenticated) {
       router.push("/profile");
@@ -55,7 +56,12 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="container mx-auto p-6"
+    >
       <h2 className="text-2xl text-center font-bold mb-4">Вход</h2>
 
       <form
@@ -65,7 +71,7 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
         <input
           type="email"
           placeholder="Email"
-          className="p-2 border rounded"
+          className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
@@ -73,14 +79,14 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
         <input
           type="password"
           placeholder="Пароль"
-          className="p-2 border rounded"
+          className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
         />
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <button
-          className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:bg-blue-300"
+          className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition duration-300"
           type="submit"
           disabled={loading}
         >
@@ -93,7 +99,7 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
           Зарегистрируйтесь
         </Link>
       </p>
-    </div>
+    </motion.div>
   );
 };
 

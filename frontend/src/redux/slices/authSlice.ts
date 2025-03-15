@@ -203,7 +203,7 @@ const authSlice = createSlice({
 
       .addCase(updateAvatar.fulfilled, (state, action) => {
         if (state.user) {
-          state.user.avatar_url = action.payload.avatar_url;
+          state.user.avatar_url = action.payload.avatarUrl;
         }
       });
   },

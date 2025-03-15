@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { fetchUser } from "@/redux/slices/authSlice";
 import { useRouter } from "next/router";
-import { Search } from "lucide-react";
-
+import { Search, Heart, ShoppingCart, User } from "lucide-react";
 import { searchProducts } from "@/redux/slices/productsSlice";
 import Image from "next/image";
 
@@ -23,7 +22,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -48,10 +46,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  const handleSearchItemClick = () => {
-    setIsSearchFocused(false);
-  };
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -69,35 +63,40 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <motion.header
-        className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 shadow-lg"
+        className="sticky top-0 z-20 bg-gradient-to-r from-indigo-600 to-blue-500 text-white p-5 shadow-md"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-3xl font-extrabold tracking-wide">Marketplace</h1>
+          <Link
+            href="/products"
+            className="text-3xl font-extrabold tracking-wide"
+          >
+            Marketplace
+          </Link>
 
-          <div ref={searchRef} className="relative flex-grow mx-6">
+          <div ref={searchRef} className="relative flex-grow mx-6 max-w-lg">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Поиск продуктов..."
+                placeholder="Поиск товаров..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
                 onFocus={() => setIsSearchFocused(true)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 rounded-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-md"
               />
               <Search className="absolute left-3 top-2.5 text-gray-500 w-5 h-5" />
             </div>
-            {isSearchFocused && products.length > 0 ? (
+            {isSearchFocused && products.length > 0 && (
               <div className="absolute top-12 left-0 right-0 bg-white text-gray-900 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
                 {products.map((product) => (
                   <Link
                     key={product.id}
                     href={`/products/${product.id}`}
                     className="block px-4 py-3 hover:bg-blue-100 transition-all duration-200 ease-in-out"
-                    onClick={handleSearchItemClick}
+                    onClick={() => setIsSearchFocused(false)}
                   >
                     <div className="flex items-center">
                       <Image
@@ -117,48 +116,38 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </Link>
                 ))}
               </div>
-            ) : null}
+            )}
           </div>
 
-          <nav>
-            <ul className="flex space-x-6">
-              <li className="relative">
-                <Link href="/favorites" className="hover:underline">
-                  Favorites
-                  {favorites.length > 0 && (
-                    <span className="absolute bottom-4 left-14 bg-red-600 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                      {favorites.length}
-                    </span>
-                  )}
-                </Link>
-              </li>
-              <li>
-                <Link href="/products" className="hover:underline">
-                  Products
-                </Link>
-              </li>
-              <li className="relative">
-                <Link href="/cart" className="hover:underline">
-                  Cart
-                  {cart.length > 0 && (
-                    <span className="absolute -top-2 -right-3 bg-red-600 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                      {cart.length}
-                    </span>
-                  )}
-                </Link>
-              </li>
-              <li>
-                {user ? (
-                  <Link href="/profile" className="hover:underline">
-                    Profile
-                  </Link>
-                ) : (
-                  <Link href="/register" className="hover:underline">
-                    Sign In / Register
-                  </Link>
-                )}
-              </li>
-            </ul>
+          <nav className="flex space-x-6">
+            <Link
+              href="/favorites"
+              className="relative flex items-center gap-1 hover:text-gray-200 transition"
+            >
+              <Heart className="w-7 h-7" />
+              {favorites.length > 0 && (
+                <span className="absolute -top-2 -right-3 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
+                  {favorites.length}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/cart"
+              className="relative flex items-center gap-1 hover:text-gray-200 transition"
+            >
+              <ShoppingCart className="w-7 h-7" />
+              {cart.length > 0 && (
+                <span className="absolute -top-2 -right-3 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
+                  {cart.length}
+                </span>
+              )}
+            </Link>
+            <Link
+              href={user ? "/profile" : "/register"}
+              className="flex items-center gap-1 hover:text-gray-200 transition"
+            >
+              <User className="w-7 h-7" />
+            </Link>
           </nav>
         </div>
       </motion.header>
@@ -173,13 +162,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </motion.main>
 
       <motion.footer
-        className="bg-gray-900 text-gray-300 p-6 text-center"
+        className="bg-gray-900 text-gray-400 p-6 text-center"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto">
-          <p>&copy; Marketplace. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Marketplace. Все права защищены.
+          </p>
         </div>
       </motion.footer>
     </div>

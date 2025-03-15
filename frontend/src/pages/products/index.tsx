@@ -6,6 +6,15 @@ import ProductCard from "@/components/ProductCard";
 import api from "@/utils/api";
 import Slider from "@mui/material/Slider";
 import { FaStar } from "react-icons/fa";
+import { motion } from "framer-motion";
+import {
+  Select,
+  Listbox,
+  ListboxButton,
+  ListboxOptions,
+  ListboxOption,
+} from "@headlessui/react";
+import { ChevronsUpDown } from "lucide-react";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { query } = context;
@@ -41,6 +50,7 @@ interface HomeProps {
   initialCurrentPage: number;
   categories: string[];
 }
+
 const Home: React.FC<HomeProps> = ({
   initialProducts,
   initialTotalPages,
@@ -111,27 +121,62 @@ const Home: React.FC<HomeProps> = ({
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 text-center">
+    <div className="px-6 py-12 bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
+      <motion.h1
+        className="text-4xl font-bold text-center text-gray-900 mb-8"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         Products
-      </h1>
+      </motion.h1>
 
-      <div className="flex flex-wrap gap-4 mb-6 justify-between">
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="p-2 border rounded"
-        >
-          <option value="">All Categories</option>
-          {categories.map((cat: any) => (
-            <option key={cat.id} value={cat.name}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+      <motion.div
+        className="flex flex-wrap gap-6 mb-8 justify-between bg-white p-6 rounded-xl shadow-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Listbox value={category} onChange={setCategory}>
+          <div className="relative w-64 z-10">
+            <ListboxButton className="w-full p-3 text-left bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <span className="block truncate">
+                {category || "All Categories"}
+              </span>
+              <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <ChevronsUpDown className="w-5 h-5 text-gray-400" />
+              </span>
+            </ListboxButton>
+            <ListboxOptions className="absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+              <ListboxOption
+                value=""
+                className={({ active }) =>
+                  `p-3 cursor-pointer ${
+                    active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
+                  }`
+                }
+              >
+                All Categories
+              </ListboxOption>
+              {categories.map((cat: any) => (
+                <ListboxOption
+                  key={cat.id}
+                  value={cat.name}
+                  className={({ active }) =>
+                    `p-3 cursor-pointer ${
+                      active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
+                    }`
+                  }
+                >
+                  {cat.name}
+                </ListboxOption>
+              ))}
+            </ListboxOptions>
+          </div>
+        </Listbox>
 
         <div className="flex flex-col items-center">
-          <span>Price Range</span>
+          <span className="text-lg font-medium text-gray-700">Price Range</span>
           <Slider
             value={priceRange}
             onChange={(_, newValue) => setPriceRange(newValue as number[])}
@@ -146,69 +191,154 @@ const Home: React.FC<HomeProps> = ({
           {[1, 2, 3, 4, 5].map((star) => (
             <FaStar
               key={star}
-              className={`cursor-pointer text-xl ${
-                star <= (rating || 0) ? "text-yellow-500" : "text-gray-300"
+              className={`cursor-pointer text-2xl transition duration-200 ease-in-out ${
+                star <= (rating || 0)
+                  ? "text-yellow-500"
+                  : "text-gray-300 hover:text-yellow-400"
               }`}
               onClick={() => handleStarClick(star)}
             />
           ))}
         </div>
 
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="p-2 border rounded"
-        >
-          <option value="id">ID</option>
-          <option value="name">Name</option>
-          <option value="price">Price</option>
-          <option value="rating">Rating</option>
-        </select>
+        <Listbox value={sortBy} onChange={setSortBy}>
+          <div className="relative w-48 z-10">
+            <ListboxButton className="w-full p-3 text-left bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <span className="block truncate">{sortBy || "Sort By"}</span>
+              <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <ChevronsUpDown className="w-5 h-5 text-gray-400" />
+              </span>
+            </ListboxButton>
+            <ListboxOptions className="absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+              <ListboxOption
+                value="new"
+                className={({ active }) =>
+                  `p-3 cursor-pointer ${
+                    active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
+                  }`
+                }
+              >
+                New
+              </ListboxOption>
+              <ListboxOption
+                value="name"
+                className={({ active }) =>
+                  `p-3 cursor-pointer ${
+                    active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
+                  }`
+                }
+              >
+                Name
+              </ListboxOption>
+              <ListboxOption
+                value="price"
+                className={({ active }) =>
+                  `p-3 cursor-pointer ${
+                    active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
+                  }`
+                }
+              >
+                Price
+              </ListboxOption>
+              <ListboxOption
+                value="rating"
+                className={({ active }) =>
+                  `p-3 cursor-pointer ${
+                    active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
+                  }`
+                }
+              >
+                Rating
+              </ListboxOption>
+            </ListboxOptions>
+          </div>
+        </Listbox>
 
-        <select
-          value={order}
-          onChange={(e) => setOrder(e.target.value)}
-          className="p-2 border rounded"
-        >
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
-        </select>
-      </div>
+        <Listbox value={order} onChange={setOrder}>
+          <div className="relative w-48 z-10">
+            <ListboxButton className="w-full p-3 text-left bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <span className="block truncate">
+                {order === "asc" ? "Ascending" : "Descending"}
+              </span>
+              <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <ChevronsUpDown className="w-5 h-5 text-gray-400" />
+              </span>
+            </ListboxButton>
+            <ListboxOptions className="absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+              <ListboxOption
+                value="asc"
+                className={({ active }) =>
+                  `p-3 cursor-pointer ${
+                    active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
+                  }`
+                }
+              >
+                Ascending
+              </ListboxOption>
+              <ListboxOption
+                value="desc"
+                className={({ active }) =>
+                  `p-3 cursor-pointer ${
+                    active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
+                  }`
+                }
+              >
+                Descending
+              </ListboxOption>
+            </ListboxOptions>
+          </div>
+        </Listbox>
+      </motion.div>
 
       {products?.length > 0 ? (
-        <div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-gray-200 rounded-md mx-2 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span className="px-4 py-2">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-gray-200 rounded-md mx-2 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6 z-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </motion.div>
       ) : (
-        <div className="flex items-center justify-center w-full h-[50vh]">
-          <p className="text-3xl font-bold text-gray-800 text-center">
+        <motion.div
+          className="flex items-center justify-center w-full h-[50vh]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <p className="text-3xl font-semibold text-gray-800 text-center">
             No products found
           </p>
-        </div>
+        </motion.div>
+      )}
+
+      {products?.length > 0 && (
+        <motion.div
+          className="flex justify-center mt-8 space-x-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-6 py-3 bg-indigo-500 text-white rounded-lg shadow-md hover:bg-indigo-600 disabled:bg-indigo-200 transition duration-200"
+          >
+            Previous
+          </button>
+          <span className="px-6 py-3 text-lg font-medium text-gray-800">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-6 py-3 bg-indigo-500 text-white rounded-lg shadow-md hover:bg-indigo-600 disabled:bg-indigo-200 transition duration-200"
+          >
+            Next
+          </button>
+        </motion.div>
       )}
     </div>
   );

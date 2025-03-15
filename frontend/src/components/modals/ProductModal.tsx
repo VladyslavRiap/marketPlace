@@ -5,6 +5,7 @@ import { XCircle } from "lucide-react";
 import {
   addProduct,
   updateProduct,
+  addProductAttributes,
   Product,
 } from "@/redux/slices/productsSlice";
 import {
@@ -17,6 +18,7 @@ import AttributeForm from "../AttributeForm";
 interface ProductModalProps {
   onClose: () => void;
   productToEdit?: Product | null;
+
   onSuccess?: () => void;
 }
 
@@ -26,7 +28,9 @@ const ProductModal: React.FC<ProductModalProps> = ({
   onSuccess,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { error } = useSelector((state: RootState) => state.products);
+  const { sellerStatus, error } = useSelector(
+    (state: RootState) => state.products
+  );
   const { categories, subcategories } = useSelector(
     (state: RootState) => state.categories
   );
@@ -35,33 +39,19 @@ const ProductModal: React.FC<ProductModalProps> = ({
   const [productId, setProductId] = useState<number | null>(
     productToEdit?.id || null
   );
-  const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
+  const [subcategoryId, setSubcategoryId] = useState<number | null>(
+    productToEdit?.subcategory ? Number(productToEdit.subcategory) : null
+  );
 
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
+
   useEffect(() => {
-    if (productToEdit) {
-      const categoryArray = Object.values(categories).flat();
-      const category = categoryArray.find(
-        (cat) => cat.name === productToEdit.category
-      );
-
-      if (category) {
-        if (!subcategories[category.id]) {
-          dispatch(fetchSubcategories(category.id));
-        }
-
-        const subcategoryArray = Object.values(subcategories).flat();
-        const subcategory = subcategoryArray.find(
-          (sub) => sub.name === productToEdit.subcategory
-        );
-        if (subcategory) {
-          setSubcategoryId(subcategory.id);
-        }
-      }
+    if (subcategoryId) {
+      dispatch(fetchSubcategories(Number(subcategoryId)));
     }
-  }, [productToEdit, categories, subcategories, dispatch]);
+  }, [subcategoryId, dispatch]);
 
   const handleProductSubmit = async (productData: FormData) => {
     try {
@@ -69,17 +59,37 @@ const ProductModal: React.FC<ProductModalProps> = ({
         await dispatch(
           updateProduct({ id: productToEdit.id, product: productData })
         ).unwrap();
+
         onSuccess?.();
         onClose();
       } else {
         const resultAction = await dispatch(addProduct(productData));
         if (addProduct.fulfilled.match(resultAction)) {
-          setProductId(resultAction.payload.id);
+          const newProductId = resultAction.payload.id;
+          setProductId(newProductId);
+          const subcategoryId = Number(productData.get("subcategory_id"));
+          setSubcategoryId(subcategoryId);
+          setStep(2);
           setStep(2);
         }
       }
     } catch (error) {
       console.error("Ошибка при сохранении продукта:", error);
+    }
+  };
+
+  const handleAttributesSubmit = async (attributes: any[]) => {
+    if (productId && subcategoryId) {
+      try {
+        await dispatch(
+          addProductAttributes({ productId, attributes })
+        ).unwrap();
+
+        onSuccess?.();
+        onClose();
+      } catch (error) {
+        console.error("Ошибка при добавлении атрибутов:", error);
+      }
     }
   };
 
@@ -106,17 +116,24 @@ const ProductModal: React.FC<ProductModalProps> = ({
         {step === 1 ? (
           <ProductForm
             initialProduct={productToEdit}
-            categories={Object.values(categories).flat()}
-            subcategories={Object.values(subcategories).flat()}
             onSubmit={handleProductSubmit}
           />
         ) : (
           <AttributeForm
             productId={productId}
             subcategoryId={subcategoryId}
-            onSubmit={() => {}}
+            onSubmit={handleAttributesSubmit}
           />
         )}
+
+        <div className="mt-4 flex justify-between">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
+          >
+            Закрыть
+          </button>
+        </div>
       </div>
     </div>
   );
