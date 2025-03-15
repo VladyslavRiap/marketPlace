@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,7 +10,7 @@ import {
   removeFromFavorites,
   fetchFavorites,
 } from "@/redux/slices/favoriteSlice";
-import { addToCart } from "@/redux/slices/cartSlice";
+import { addToCart, fetchCart } from "@/redux/slices/cartSlice";
 
 interface Product {
   id: number;
@@ -37,9 +37,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const { showMessage } = useSnackbarContext();
   const favoriteList = useAppSelector((state) => state.favorite.favorites);
   const cartItems = useAppSelector((state) => state.cart.items);
+
+  const [isInCart, setIsInCart] = useState<boolean>(
+    cartItems.some((item) => item.id === product.id)
+  );
   const isFavorite = favoriteList.some((fav) => fav.id === product.id);
 
-  const isInCart = cartItems.some((item) => item.id === product.id);
+  useEffect(() => {
+    setIsInCart(cartItems.some((item) => item.id === product.id));
+  }, [cartItems, product.id]);
 
   const handleFavoriteClick = async (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -68,6 +74,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
       if (!isInCart) {
         await dispatch(addToCart(product.id)).unwrap();
         showMessage("Товар добавлен в корзину", "success");
+
+        dispatch(fetchCart());
       } else {
         showMessage("Товар уже в корзине", "info");
       }

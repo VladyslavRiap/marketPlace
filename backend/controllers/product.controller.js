@@ -352,7 +352,13 @@ class ProductController {
     }
   }
   static async searchProducts(req, res) {
-    const { query, page = 1, limit = 10 } = req.query;
+    const {
+      query,
+      page = 1,
+      limit = 10,
+      sortBy = "name",
+      order = "asc",
+    } = req.query;
     const parsedPage = parseInt(page, 10);
     const parsedLimit = parseInt(limit, 10);
 
@@ -365,16 +371,25 @@ class ProductController {
       return res.status(400).json({ error: "Invalid page or limit value" });
     }
 
-    const offset = (parsedPage - 1) * parsedLimit;
-
     if (!query) {
       return res.status(400).json({ error: "Search query is required" });
     }
+
+    const allowedSortFields = ["name", "price", "rating"];
+    const allowedOrder = ["asc", "desc"];
+
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "name";
+    const sortOrder = allowedOrder.includes(order.toLowerCase())
+      ? order.toUpperCase()
+      : "ASC";
+
+    const offset = (parsedPage - 1) * parsedLimit;
 
     try {
       const searchQuery = `
         SELECT * FROM products 
         WHERE name ILIKE $1 
+        ORDER BY ${sortField} ${sortOrder}
         LIMIT $2 OFFSET $3
       `;
 

@@ -1,77 +1,154 @@
+import { GetServerSideProps } from "next";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { searchProducts } from "@/redux/slices/productsSlice";
-import ProductCard from "@/components/ProductCard";
+import ProductList from "@/components/ProductList";
+import api from "@/utils/api";
+import { Product } from "@/redux/slices/productsSlice";
+import SortSelect from "@/components/SortSelect";
+import Pagination from "@/components/Pagination";
+import { useUpdateQueryParams } from "@/utils/useUpdateQueryParams";
 
-const SearchPage = () => {
-  const router = useRouter();
-  const { query } = router.query;
-  const dispatch = useAppDispatch();
-  const {
-    items: searchResults,
-    status,
-    totalPages,
-  } = useAppSelector((state) => state.products);
-  const [page, setPage] = useState<number>(1);
+interface SearchPageProps {
+  initialProducts: Product[];
+  initialTotalPages: number;
+  initialCurrentPage: number;
+  query: string;
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { query } = context;
+  const searchQuery = query.query as string;
+  const page = parseInt(query.page as string) || 1;
   const limit = 12;
+  const sortBy = (query.sortBy as string) || "name";
+  const order = (query.order as string) || "asc";
+
+  try {
+    const response = await api.get("/products/search", {
+      params: {
+        query: searchQuery,
+        page,
+        limit,
+        sortBy,
+        order,
+      },
+    });
+
+    return {
+      props: {
+        initialProducts: response.data.products || [],
+        initialTotalPages: response.data.totalPages || 1,
+        initialCurrentPage: response.data.currentPage || 1,
+        query: searchQuery,
+      },
+    };
+  } catch (error) {
+    return {
+      props: {
+        initialProducts: [],
+        initialTotalPages: 1,
+        initialCurrentPage: 1,
+        query: searchQuery,
+      },
+    };
+  }
+};
+
+const SearchPage: React.FC<SearchPageProps> = ({
+  initialProducts,
+  initialTotalPages,
+  initialCurrentPage,
+  query,
+}) => {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { items: searchResults, status } = useAppSelector(
+    (state) => state.products
+  );
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [currentPage, setCurrentPage] = useState(initialCurrentPage);
+  const [sortBy, setSortBy] = useState<string>(
+    Array.isArray(router.query.sortBy)
+      ? router.query.sortBy[0]
+      : router.query.sortBy || "name"
+  );
+
+  const [order, setOrder] = useState<string>(
+    Array.isArray(router.query.order)
+      ? router.query.order[0]
+      : router.query.order || "asc"
+  );
+
+  const updateQueryParams = useUpdateQueryParams();
 
   useEffect(() => {
     if (query) {
-      dispatch(searchProducts({ query: query as string, page, limit }));
+      dispatch(
+        searchProducts({
+          query: query as string,
+          page: currentPage,
+          limit: 12,
+          sortBy: sortBy as string,
+          order: order as string,
+        })
+      );
     }
-  }, [query, page, dispatch]);
+  }, [query, currentPage, sortBy, order, dispatch]);
 
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      setPage(page + 1);
+  useEffect(() => {
+    setProducts(searchResults);
+    setTotalPages(initialTotalPages);
+    setCurrentPage(initialCurrentPage);
+  }, [searchResults, initialTotalPages, initialCurrentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      updateQueryParams({ page: newPage });
     }
   };
 
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
-  };
-
-  if (status === "loading") {
-    return <div>Loading...</div>;
-  }
+  useEffect(() => {
+    updateQueryParams({ sortBy, order, page: currentPage });
+  }, [sortBy, order, currentPage]);
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-6">Search Results</h1>
-      {searchResults.length > 0 ? (
-        <div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-            {searchResults.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">Search Results</h1>
 
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={handlePrevPage}
-              disabled={page === 1}
-              className="px-4 py-2 bg-gray-200 rounded-md mx-2 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span className="px-4 py-2">
-              {page} / {totalPages}
-            </span>
-            <button
-              onClick={handleNextPage}
-              disabled={page === totalPages}
-              className="px-4 py-2 bg-gray-200 rounded-md mx-2 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p>No products found for "{query}"</p>
-      )}
+      <div className="flex flex-wrap gap-6 mb-8 justify-between bg-white p-6 rounded-xl shadow-lg">
+        <SortSelect
+          value={sortBy}
+          onChange={setSortBy}
+          options={[
+            { value: "name", label: "Name" },
+            { value: "price", label: "Price" },
+            { value: "rating", label: "Rating" },
+          ]}
+          placeholder="Sort By"
+        />
+
+        <SortSelect
+          value={order}
+          onChange={setOrder}
+          options={[
+            { value: "asc", label: "Ascending" },
+            { value: "desc", label: "Descending" },
+          ]}
+          placeholder="Order"
+        />
+      </div>
+
+      <ProductList
+        products={products}
+        status={status}
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 };

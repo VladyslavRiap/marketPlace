@@ -28,7 +28,13 @@ interface ProductsState {
   sellerStatus: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
 }
-
+interface SearchProductsParams {
+  query: string;
+  page: number;
+  limit: number;
+  sortBy?: string;
+  order?: string;
+}
 const initialState: ProductsState = {
   items: [],
   sellerItems: [],
@@ -53,23 +59,13 @@ export const fetchProducts = createAsyncThunk(
 );
 
 export const resetStatus = createAction("products/resetStatus");
-
 export const searchProducts = createAsyncThunk(
   "products/searchProducts",
-  async (
-    { query, page, limit }: { query: string; page: number; limit: number },
-    { rejectWithValue }
-  ) => {
-    try {
-      const { data } = await api.get("/products/search", {
-        params: { query, page, limit },
-      });
-      return data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data || "Ошибка при поиске товаров"
-      );
-    }
+  async ({ query, page, limit, sortBy, order }: SearchProductsParams) => {
+    const response = await api.get("/products/search", {
+      params: { query, page, limit, sortBy, order },
+    });
+    return response.data;
   }
 );
 
