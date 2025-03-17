@@ -19,6 +19,7 @@ interface Product {
   oldPrice?: number;
   description: string;
   image_url: string;
+  images: string[];
   rating: string;
 }
 
@@ -43,9 +44,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
   );
   const isFavorite = favoriteList.some((fav) => fav.id === product.id);
 
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
   useEffect(() => {
     setIsInCart(cartItems.some((item) => item.id === product.id));
   }, [cartItems, product.id]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (isHovered && product.images && product.images.length > 1) {
+      interval = setInterval(() => {
+        setCurrentImageIndex(
+          (prevIndex) => (prevIndex + 1) % product.images.length
+        );
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isHovered, product.images]);
 
   const handleFavoriteClick = async (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -91,13 +111,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative w-full h-56">
         <Link href={`/products/${product.id}`} passHref>
           <div className="w-full h-full relative">
-            {product.image_url ? (
+            {product.images && product.images.length > 0 ? (
               <Image
-                src={product.image_url}
+                src={product.images[currentImageIndex]}
                 alt={product.name}
                 layout="fill"
                 objectFit="cover"
@@ -110,6 +132,23 @@ const ProductCard: React.FC<ProductCardProps> = ({
             )}
           </div>
         </Link>
+
+        {product.images && product.images.length > 1 && (
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2">
+            {product.images.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(index);
+                }}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === currentImageIndex ? "bg-black" : "bg-gray-400"
+                }`}
+              />
+            ))}
+          </div>
+        )}
 
         <button
           onClick={handleFavoriteClick}

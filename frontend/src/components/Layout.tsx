@@ -100,7 +100,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   >
                     <div className="flex items-center">
                       <Image
-                        src={product.image_url || "/placeholder.png"}
+                        src={
+                          product.images && product.images.length > 0
+                            ? product.images[0]
+                            : "/placeholder.png"
+                        }
                         alt={product.name}
                         width={40}
                         height={40}

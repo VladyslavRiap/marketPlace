@@ -18,6 +18,7 @@ export interface Product {
   subcategory: string;
   attributes: ProductAttribute[];
   rating: string;
+  images: string[];
 }
 
 interface ProductsState {
@@ -187,6 +188,7 @@ const productsSlice = createSlice({
       })
       .addCase(fetchSellerProducts.fulfilled, (state, action) => {
         state.sellerStatus = "succeeded";
+        console.log(action.payload);
         state.sellerItems = action.payload;
       })
       .addCase(fetchSellerProducts.rejected, (state, action) => {

@@ -8,6 +8,8 @@ interface Product {
   category: string;
   description: string;
   image_url: string;
+  images: string[];
+  rating: string;
 }
 
 interface FavoriteState {
@@ -81,6 +83,7 @@ const favoriteSlice = createSlice({
       .addCase(fetchFavorites.fulfilled, (state, action) => {
         state.loading = false;
         state.favorites = action.payload;
+        console.log(action.payload);
       })
       .addCase(fetchFavorites.rejected, (state, action) => {
         state.loading = false;

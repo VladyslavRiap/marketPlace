@@ -10,7 +10,12 @@ module.exports = {
       p.created_at, 
       p.updated_at,
       c.name AS category,
-      s.name AS subcategory
+      s.name AS subcategory,
+      (
+        SELECT json_agg(image_url)
+        FROM product_images pi
+        WHERE pi.product_id = p.id
+      ) AS images
     FROM products p
     JOIN subcategories s ON p.subcategory_id = s.id
     JOIN categories c ON s.category_id = c.id
@@ -31,7 +36,12 @@ module.exports = {
       json_agg(json_build_object(
         'attribute_name', a.name,
         'attribute_value', pa.value
-      )) AS attributes
+      )) AS attributes,
+      (
+        SELECT json_agg(image_url)
+        FROM product_images pi
+        WHERE pi.product_id = p.id
+      ) AS images
     FROM products p
     JOIN subcategories s ON p.subcategory_id = s.id
     JOIN categories c ON s.category_id = c.id

@@ -109,16 +109,25 @@ class ProductController {
       }
     };
   }
-
   static async getProductById(req, res) {
     const { id } = req.params;
 
     try {
-      const result = await pool.query(queries.GET_PRODUCT_BY_ID, [id]);
-      if (result.rows.length === 0) {
+      const productResult = await pool.query(queries.GET_PRODUCT_BY_ID, [id]);
+
+      if (productResult.rows.length === 0) {
         return res.status(404).json({ error: "Product not found" });
       }
-      res.json(result.rows[0]);
+
+      const imagesResult = await pool.query(
+        `SELECT image_url FROM product_images WHERE product_id = $1`,
+        [id]
+      );
+
+      const product = productResult.rows[0];
+      product.images = imagesResult.rows.map((row) => row.image_url);
+
+      res.json(product);
     } catch (error) {
       console.error("Cannot receive product", error.message);
       res.status(500).json({ error: "Cannot receive product" });
@@ -136,31 +145,41 @@ class ProductController {
           .json({ error: "Name, price, and subcategory are required" });
       }
 
-      let uploadedImageUrl = req.file
-        ? await uploadFile(
-            "marketplace-my-1-2-3-4",
-            req.file.originalname,
-            req.file.buffer
-          )
-        : null;
-
       const productResult = await pool.query(queries.INSERT_PRODUCT, [
         name,
         price,
         description,
-        uploadedImageUrl,
+        null,
         userId,
         subcategory_id,
       ]);
 
       const productId = productResult.rows[0].id;
 
-      res.status(201).json({ id: productId });
+      let imageUrls = [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const imageUrl = await uploadFile(
+            "marketplace-my-1-2-3-4",
+            file.originalname,
+            file.buffer
+          );
+          imageUrls.push(imageUrl);
+
+          await pool.query(
+            `INSERT INTO product_images (product_id, image_url) VALUES ($1, $2)`,
+            [productId, imageUrl]
+          );
+        }
+      }
+
+      res.status(201).json({ id: productId, images: imageUrls });
     } catch (error) {
       console.error("Error adding new product:", error.message);
       res.status(500).json({ error: "Server error" });
     }
   }
+
   static async addProductAttributes(req, res) {
     const client = await pool.connect();
 
@@ -243,29 +262,15 @@ class ProductController {
           .json({ error: "You are not authorized to update this product" });
       }
 
-      let uploadedImageUrl = product.image_url;
-
-      if (req.file) {
-        uploadedImageUrl = await uploadFile(
-          "marketplace-my-1-2-3-4",
-          req.file.originalname,
-          req.file.buffer
-        );
-      }
-
       const updatedFields = {
         name,
         price,
         description,
-        image_url: uploadedImageUrl,
         subcategory_id,
       };
 
       const updateColumns = Object.keys(updatedFields)
-        .map(
-          (field) =>
-            `${field} = $${Object.keys(updatedFields).indexOf(field) + 1}`
-        )
+        .map((field, index) => `${field} = $${index + 1}`)
         .join(", ");
       const updateValues = Object.values(updatedFields);
 
@@ -276,6 +281,27 @@ class ProductController {
         RETURNING *;
       `;
       const result = await pool.query(updateQuery, [...updateValues, id]);
+
+      if (req.files && req.files.length > 0) {
+        await pool.query(`DELETE FROM product_images WHERE product_id = $1`, [
+          id,
+        ]);
+
+        let imageUrls = [];
+        for (const file of req.files) {
+          const imageUrl = await uploadFile(
+            "marketplace-my-1-2-3-4",
+            file.originalname,
+            file.buffer
+          );
+          imageUrls.push(imageUrl);
+
+          await pool.query(
+            `INSERT INTO product_images (product_id, image_url) VALUES ($1, $2)`,
+            [id, imageUrl]
+          );
+        }
+      }
 
       await pool.query(queries.DELETE_PRODUCT_ATTRIBUTES, [id]);
 
@@ -387,14 +413,22 @@ class ProductController {
 
     try {
       const searchQuery = `
-        SELECT * FROM products 
+        SELECT 
+          p.*,
+          (
+            SELECT json_agg(image_url)
+            FROM product_images pi
+            WHERE pi.product_id = p.id
+          ) AS images
+        FROM products p
         WHERE name ILIKE $1 
         ORDER BY ${sortField} ${sortOrder}
         LIMIT $2 OFFSET $3
       `;
 
       const countQuery = `
-        SELECT COUNT(*) FROM products 
+        SELECT COUNT(*) 
+        FROM products 
         WHERE name ILIKE $1
       `;
 
@@ -427,7 +461,17 @@ class ProductController {
 
     try {
       const result = await pool.query(
-        "SELECT * FROM products WHERE user_id = $1",
+        `
+        SELECT 
+          p.*,
+          (
+            SELECT json_agg(image_url)
+            FROM product_images pi
+            WHERE pi.product_id = p.id
+          ) AS images
+        FROM products p
+        WHERE p.user_id = $1
+        `,
         [userId]
       );
 

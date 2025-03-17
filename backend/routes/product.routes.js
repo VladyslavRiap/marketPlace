@@ -15,7 +15,7 @@ const upload = multer({
       cb(new Error("Only image files are allowed"), false);
     }
   },
-});
+}).array("images", 5); // Позволяет загружать до 5 изображений
 
 router.get("/mine", authMiddleware, productController.getSellerProducts);
 router.get("/categories", productController.getCategories);
@@ -304,7 +304,7 @@ router.post(
   "/",
   authMiddleware,
   checkRole(["admin", "seller"]),
-  upload.single("image"),
+  upload,
   productController.addProduct
 );
 
@@ -369,7 +369,7 @@ router.put(
   "/:id",
   authMiddleware,
   checkRole(["admin", "seller"]),
-  upload.single("image"),
+  upload,
   productController.updateProduct
 );
 

@@ -19,7 +19,7 @@ interface SearchPageProps {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { query } = context;
-  const searchQuery = query.query as string;
+  const searchQuery = (query.query as string) || "";
   const page = parseInt(query.page as string) || 1;
   const limit = 12;
   const sortBy = (query.sortBy as string) || "name";

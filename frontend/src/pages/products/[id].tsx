@@ -12,6 +12,7 @@ import { useSnackbarContext } from "@/context/SnackBarContext";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { Star, Heart, ShoppingCart } from "lucide-react";
 import getAttributeIcon from "@/utils/iconutils";
+import { useState } from "react";
 
 interface ProductAttribute {
   attribute_id: number;
@@ -26,6 +27,7 @@ interface Product {
   oldPrice?: number;
   description: string;
   image_url: string;
+  images: string[];
   rating: number;
   attributes: ProductAttribute[];
 }
@@ -38,7 +40,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { id } = context.params as { id: string };
 
   try {
-    const { data } = await api.get(`products/${id}`);
+    const { data } = await api.get(`/products/${id}`);
 
     return {
       props: { product: data },
@@ -56,6 +58,9 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
   const dispatch = useAppDispatch();
   const { showMessage } = useSnackbarContext();
   const favorites = useAppSelector((state) => state.favorite.favorites);
+  const [selectedImage, setSelectedImage] = useState<string | null>(
+    product?.images?.[0] || null
+  );
 
   const isFavorite = product
     ? favorites.some((fav) => fav.id === product.id)
@@ -112,12 +117,34 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
           className="rounded-lg shadow-lg overflow-hidden"
         >
           <Image
-            src={product.image_url}
+            src={selectedImage || product.image_url}
             alt={product.name}
             width={2000}
             height={2000}
             className="w-full h-96 object-cover rounded-lg hover:scale-105 transition-transform duration-300"
           />
+
+          <div className="flex gap-2 mt-4">
+            {product.images.map((image, index) => (
+              <div
+                key={index}
+                className={`cursor-pointer border-2 ${
+                  selectedImage === image
+                    ? "border-indigo-600"
+                    : "border-transparent"
+                } rounded-lg overflow-hidden`}
+                onClick={() => setSelectedImage(image)}
+              >
+                <Image
+                  src={image}
+                  alt={`Thumbnail ${index + 1}`}
+                  width={100}
+                  height={100}
+                  className="w-20 h-20 object-cover"
+                />
+              </div>
+            ))}
+          </div>
         </motion.div>
 
         <div>

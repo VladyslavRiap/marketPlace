@@ -23,18 +23,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
       : 0,
   });
 
-  const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(
-    initialProduct?.image_url || null
+  const [images, setImages] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>(
+    initialProduct?.images || []
   );
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const file = e.target.files[0];
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +35,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
     formData.append("description", product.description);
     formData.append("price", product.price.toString());
     formData.append("subcategory_id", product.subcategory_id.toString());
-    if (image) formData.append("image", image);
+
+    images.forEach((image, index) => {
+      formData.append(`images`, image);
+    });
+
     onSubmit(formData);
   };
 
@@ -69,7 +65,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         onChange={(val: number) => setProduct({ ...product, price: val })}
       />
 
-      <ImageUploader onImageSelect={setImage} initialPreview={preview} />
+      <ImageUploader onImageSelect={setImages} initialPreview={previews} />
 
       <CategorySelector
         categoryId={product.category_id}
