@@ -4,6 +4,7 @@ import authReducer from "@/redux/slices/authSlice";
 import favoriteReducer from "@/redux/slices/favoriteSlice";
 import cartReducer from "@/redux/slices/cartSlice";
 import categoryReducer from "@/redux/slices/categorySlice";
+import reviewReducer from "@/redux/slices/reviewSlice";
 export const store = configureStore({
   reducer: {
     products: productsReducer,
@@ -11,6 +12,7 @@ export const store = configureStore({
     favorite: favoriteReducer,
     cart: cartReducer,
     categories: categoryReducer,
+    reviews: reviewReducer,
   },
 });
 

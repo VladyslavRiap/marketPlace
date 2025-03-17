@@ -7,6 +7,7 @@ module.exports = {
       p.description, 
       p.image_url, 
       p.user_id, 
+      p.rating,
       p.created_at, 
       p.updated_at,
       c.name AS category,
@@ -31,6 +32,7 @@ module.exports = {
       p.user_id, 
       p.created_at, 
       p.updated_at,
+      p.rating,
       c.name AS category,
       s.name AS subcategory,
       json_agg(json_build_object(

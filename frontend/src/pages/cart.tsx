@@ -20,7 +20,7 @@ interface CartItem {
   price: number;
   quantity: number;
   total_price: number;
-  image_url: string;
+  images: string[];
 }
 
 interface CartPageProps {
@@ -60,7 +60,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
         item.id === productId
           ? {
               ...item,
-              quantity: Math.max(1, item.quantity + change),
+              quantity: Math.max(0, item.quantity + change),
               total_price:
                 Number(
                   ((item.quantity + change) * (item.price || 0)).toFixed(2)
@@ -68,6 +68,13 @@ const CartPage = ({ initialCart }: CartPageProps) => {
             }
           : item
       );
+
+      const itemToUpdate = updatedCart.find((item) => item.id === productId);
+
+      if (itemToUpdate && itemToUpdate.quantity === 0) {
+        await handleRemove(productId);
+        return;
+      }
 
       setLocalCart(updatedCart);
       setTotalAmount(
@@ -140,7 +147,11 @@ const CartPage = ({ initialCart }: CartPageProps) => {
                     className="flex items-center space-x-6 md:col-span-2"
                   >
                     <img
-                      src={item.image_url}
+                      src={
+                        item.images && item.images.length > 0
+                          ? item.images[0]
+                          : "/placeholder.png"
+                      }
                       alt={item.name}
                       className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
                     />

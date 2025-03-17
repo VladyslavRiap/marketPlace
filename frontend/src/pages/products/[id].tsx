@@ -12,7 +12,10 @@ import { useSnackbarContext } from "@/context/SnackBarContext";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { Star, Heart, ShoppingCart } from "lucide-react";
 import getAttributeIcon from "@/utils/iconutils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { REVIEW_MODAL_ID, useModal } from "@/context/ModalContext";
+import Reviews from "@/components/Review";
+import { addToCart, fetchCart } from "@/redux/slices/cartSlice";
 
 interface ProductAttribute {
   attribute_id: number;
@@ -32,28 +35,45 @@ interface Product {
   attributes: ProductAttribute[];
 }
 
+export interface Review {
+  id: number;
+  user_id: number;
+  product_id: number;
+  rating: number;
+  comment: string;
+  created_at: string;
+  user_name: string;
+  user_avatar_url?: string;
+}
+
 interface ProductPageProps {
   product: Product | null;
+  reviews: Review[];
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { id } = context.params as { id: string };
 
   try {
-    const { data } = await api.get(`/products/${id}`);
+    const { data: productData } = await api.get(`/products/${id}`);
+
+    const { data: reviewsData } = await api.get(`/products/${id}/reviews`);
 
     return {
-      props: { product: data },
+      props: {
+        product: productData,
+        reviews: reviewsData,
+      },
     };
   } catch (error) {
     console.error("Ошибка при загрузке продукта:", error);
     return {
-      props: { product: null },
+      props: { product: null, reviews: [] },
     };
   }
 };
 
-const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
+const ProductPage: React.FC<ProductPageProps> = ({ product, reviews }) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { showMessage } = useSnackbarContext();
@@ -61,11 +81,36 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(
     product?.images?.[0] || null
   );
+  const { openModal } = useModal();
 
+  const cartItems = useAppSelector((state) => state.cart.items);
+  const [isInCart, setIsInCart] = useState(false);
+
+  useEffect(() => {
+    if (product) {
+      setIsInCart(cartItems.some((item) => item.id === product.id));
+    }
+  }, [cartItems, product]);
   const isFavorite = product
     ? favorites.some((fav) => fav.id === product.id)
     : false;
+  const handleAddToCart = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
 
+    try {
+      if (!isInCart) {
+        await dispatch(addToCart(product.id)).unwrap();
+        showMessage("Товар добавлен в корзину", "success");
+
+        dispatch(fetchCart());
+      } else {
+        showMessage("Товар уже в корзине", "info");
+      }
+    } catch (error: any) {
+      showMessage("Ошибка при добавлении в корзину: " + error.message, "error");
+    }
+  };
   const handleFavoriteToggle = async () => {
     if (!product) return;
     try {
@@ -81,7 +126,10 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
       showMessage("Ошибка при изменении избранного: " + error.message, "error");
     }
   };
-
+  const handleAddReview = () => {
+    if (!product) return;
+    openModal(REVIEW_MODAL_ID, { productId: product.id });
+  };
   if (!product) {
     return (
       <motion.div
@@ -173,15 +221,30 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
 
           <div className="mt-6 flex gap-4">
             <motion.button
-              className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-md hover:from-indigo-700 hover:to-indigo-600 transition"
+              className={`px-6 py-3 rounded-lg text-base font-semibold shadow-md ${
+                isInCart
+                  ? "bg-gray-400 text-white "
+                  : "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600 transition"
+              }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handleAddToCart}
+              disabled={isInCart}
             >
-              <ShoppingCart className="inline-block w-5 h-5 mr-2" />
-              Добавить в корзину
+              {isInCart ? (
+                <>
+                  <ShoppingCart className=" inline-block w-5 h-5 mr-2" /> Товар
+                  в корзине
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="inline-block w-5 h-5 mr-2" />
+                  Добавить в корзину
+                </>
+              )}
             </motion.button>
             <motion.button
-              className={`border px-6 py-3 rounded-lg text-lg font-semibold shadow-md transition ${
+              className={`border px-6 py-3 rounded-lg text-base font-semibold shadow-md transition ${
                 isFavorite
                   ? "border-red-600 text-red-600 hover:bg-red-50"
                   : "border-gray-400 text-gray-700 hover:bg-gray-50"
@@ -192,6 +255,14 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
             >
               <Heart className="inline-block w-5 h-5 mr-2" />
               {isFavorite ? "Удалить из избранного" : "В избранное"}
+            </motion.button>
+            <motion.button
+              className="bg-green-600 text-white px-6 py-3 rounded-lg text-basefont-semibold shadow-md hover:bg-green-700 transition"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAddReview}
+            >
+              Оставить отзыв
             </motion.button>
           </div>
         </div>
@@ -225,6 +296,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ product }) => {
           </div>
         </motion.div>
       )}
+      <Reviews initialReviews={reviews} productId={product.id} />
     </motion.div>
   );
 };

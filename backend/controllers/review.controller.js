@@ -10,7 +10,9 @@ class ReviewController {
     }
 
     try {
-      const productExists = await pool.query(queries.GET_REVIEW_ID[productId]);
+      const productExists = await pool.query(queries.GET_REVIEW_ID, [
+        productId,
+      ]);
 
       if (productExists.rows.length === 0) {
         return res.status(400).json({ error: "Product not found" });
@@ -22,6 +24,7 @@ class ReviewController {
         rating,
         comment,
       ]);
+
       await pool.query(queries.UPDATE_PRODUCT_RATING, [productId]);
 
       res.status(201).json({ message: "Review added and rating updated" });

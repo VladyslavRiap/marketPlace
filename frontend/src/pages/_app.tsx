@@ -11,17 +11,17 @@ import { SnackbarProviderWithContext } from "@/context/SnackBarContext";
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <Provider store={store}>
-      <ModalProvider>
-        <AppInitializer>
-          <SnackbarProvider maxSnack={3}>
-            <SnackbarProviderWithContext>
+      <SnackbarProvider maxSnack={3}>
+        <SnackbarProviderWithContext>
+          <ModalProvider>
+            <AppInitializer>
               <Layout>
                 <Component {...pageProps} />
               </Layout>
-            </SnackbarProviderWithContext>
-          </SnackbarProvider>
-        </AppInitializer>
-      </ModalProvider>
+            </AppInitializer>
+          </ModalProvider>
+        </SnackbarProviderWithContext>
+      </SnackbarProvider>
     </Provider>
   );
 }

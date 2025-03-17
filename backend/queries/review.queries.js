@@ -9,10 +9,20 @@ module.exports = {
       WHERE id = $1`,
 
   GET_REVIEWS_BY_PRODUCT: `
-      SELECT r.id, r.rating, r.comment, r.created_at, u.email AS user_email
+      SELECT 
+        r.id, 
+        r.rating, 
+        r.comment, 
+        r.created_at, 
+        u.email AS user_email,
+        u.name AS user_name, 
+        u.avatar_url AS user_avatar_url,
+        u.id AS user_id,
+        r.product_id
       FROM reviews r
       JOIN users u ON r.user_id = u.id
-      WHERE r.product_id = $1`,
+      WHERE r.product_id = $1
+    `,
 
   GET_REVIEW_BY_ID: `
       SELECT user_id FROM reviews WHERE id = $1`,
