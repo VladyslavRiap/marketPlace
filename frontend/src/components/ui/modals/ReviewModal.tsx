@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Star } from "lucide-react";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import api from "@/utils/api";
 import { useAppDispatch } from "@/redux/hooks";
 import { addReview, updateReview } from "@/redux/slices/reviewSlice";

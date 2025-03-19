@@ -12,8 +12,8 @@ import {
   fetchCategories,
   fetchSubcategories,
 } from "@/redux/slices/categorySlice";
-import ProductForm from "../ProductForm";
-import AttributeForm from "../AttributeForm";
+import ProductForm from "../forms/ProductForm";
+import AttributeForm from "../forms/AttributeForm";
 
 interface ProductModalProps {
   onClose: () => void;

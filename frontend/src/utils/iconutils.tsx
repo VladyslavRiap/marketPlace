@@ -1,6 +1,5 @@
 import {
   Info,
-  Star,
   Package,
   Ruler,
   Cpu,
@@ -11,8 +10,20 @@ import {
   MemoryStick,
   Smartphone,
   Camera,
+  Laptop,
+  Tv,
+  Gamepad2,
+  Refrigerator,
+  Plug,
+  Shirt,
+  Heart,
+  Home,
+  Baby,
+  Dumbbell,
+  Car,
+  Book,
 } from "lucide-react";
-
+import { JSX } from "react";
 const getAttributeIcon = (attributeName: string) => {
   if (!attributeName) return <Info className="w-6 h-6 text-gray-600" />;
 
@@ -43,3 +54,24 @@ const getAttributeIcon = (attributeName: string) => {
 };
 
 export default getAttributeIcon;
+export const categoryIcons: Record<string, JSX.Element> = {
+  "Phones, Tablets and Laptops": (
+    <Smartphone className="w-6 h-6 text-gray-700" />
+  ),
+  "Computers and Peripheral Devices": (
+    <Laptop className="w-6 h-6 text-gray-700" />
+  ),
+  "TV, Audio and Photo": <Tv className="w-6 h-6 text-gray-700" />,
+  Game: <Gamepad2 className="w-6 h-6 text-gray-700" />,
+  "Large Electrical Appliances": (
+    <Refrigerator className="w-6 h-6 text-gray-700" />
+  ),
+  "Small Electrical Appliances": <Plug className="w-6 h-6 text-gray-700" />,
+  Fashion: <Shirt className="w-6 h-6 text-gray-700" />,
+  "Health and Beauty": <Heart className="w-6 h-6 text-gray-700" />,
+  "Home, Garden and Pet Shop": <Home className="w-6 h-6 text-gray-700" />,
+  "Toys and Children’s Products": <Baby className="w-6 h-6 text-gray-700" />,
+  "Sports and Leisure": <Dumbbell className="w-6 h-6 text-gray-700" />,
+  "Auto and DIY": <Car className="w-6 h-6 text-gray-700" />,
+  "Books, Office and Food": <Book className="w-6 h-6 text-gray-700" />,
+};

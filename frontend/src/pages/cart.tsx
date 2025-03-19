@@ -9,7 +9,7 @@ import {
 import api from "@/utils/api";
 import { motion } from "framer-motion";
 import { Trash2, Plus, Minus } from "lucide-react";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import Link from "next/link";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";

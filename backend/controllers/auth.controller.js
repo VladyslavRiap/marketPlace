@@ -72,7 +72,9 @@ class AuthController {
       if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-
+      if (user.is_blocked) {
+        return res.status(403).json({ error: "Account is blocked" });
+      }
       const accessToken = jwt.sign(
         { userId: user.id, role: user.role },
         process.env.JWT_SECRET,

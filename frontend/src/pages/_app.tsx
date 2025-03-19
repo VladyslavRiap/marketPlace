@@ -2,11 +2,12 @@ import type { AppProps } from "next/app";
 import { Provider } from "react-redux";
 import { store } from "../redux/store";
 import "../styles/globals.css";
-import Layout from "@/components/Layout";
-import { ModalProvider } from "@/context/ModalContext";
+
+import { ModalProvider } from "@/redux/context/ModalContext";
 import AppInitializer from "@/components/AppInitializer";
 import { SnackbarProvider } from "notistack";
-import { SnackbarProviderWithContext } from "@/context/SnackBarContext";
+import { SnackbarProviderWithContext } from "@/redux/context/SnackBarContext";
+import Layout from "@/components/ui/layout/Layout";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import ImageUploader from "./ImageUploader";
-import CategorySelector from "./CategorySelector";
+
 import { Product } from "@/redux/slices/productsSlice";
-import PriceInput from "./PriceInput";
+import PriceInput from "../filters/PriceInput";
+import ImageUploader from "@/components/ImageUploader";
+import CategorySelector from "../filters/CategorySelector";
 
 interface ProductFormProps {
   initialProduct?: Product | null;

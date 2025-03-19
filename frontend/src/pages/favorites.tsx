@@ -6,10 +6,10 @@ import {
   removeFromFavorites,
 } from "@/redux/slices/favoriteSlice";
 import { motion } from "framer-motion";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import Link from "next/link";
 import api from "@/utils/api";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "@/components/ui/cards/ProductCard";
 
 interface Product {
   id: number;

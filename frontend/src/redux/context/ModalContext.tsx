@@ -1,7 +1,6 @@
+import ProductModal from "@/components/ui/modals/ProductModal";
+import ReviewModal from "@/components/ui/modals/ReviewModal";
 import { createContext, ReactNode, useContext, useState } from "react";
-
-import ProductModal from "@/components/modals/ProductModal";
-import ReviewModal from "@/components/modals/ReviewModal";
 
 export const PRODUCT_MODAL_ID = "productModal";
 export const REVIEW_MODAL_ID = "reviewModal";

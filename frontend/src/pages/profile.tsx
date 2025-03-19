@@ -22,8 +22,9 @@ import {
   Store,
   Check,
   X,
+  ShieldUser,
 } from "lucide-react";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import { clearCartRedux, fetchCart } from "@/redux/slices/cartSlice";
 import { clearFavorites, fetchFavorites } from "@/redux/slices/favoriteSlice";
 import {
@@ -139,6 +140,11 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
   const handleGoToSeller = () => {
     if (user.role === "seller") {
       router.push("/seller");
+    }
+  };
+  const handleGoToAdmin = () => {
+    if (user.role === "admin") {
+      router.push("/admin");
     }
   };
 
@@ -324,6 +330,23 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
               <p className="text-gray-700 text-center">
                 Перейти в панель управления продавца для управления товарами и
                 заказами.
+              </p>
+            </div>
+          </div>
+        )}
+        {user.role === "admin" && (
+          <div
+            onClick={handleGoToAdmin}
+            className="bg-white shadow-lg rounded-xl p-8 flex-1 cursor-pointer hover:shadow-xl transition-shadow max-w-md"
+          >
+            <h2 className="text-center mb-6 text-3xl font-bold text-gray-800">
+              Панель Администратора
+            </h2>
+            <div className="flex flex-col items-center">
+              <ShieldUser className="w-28 h-28 text-blue-600 bg-blue-100 p-3 rounded-full mb-4" />
+              <p className="text-gray-700 text-center">
+                Перейти в панель управления администратора для управления
+                товарами и заказами.
               </p>
             </div>
           </div>

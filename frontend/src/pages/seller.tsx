@@ -5,11 +5,11 @@ import {
   fetchSellerProducts,
   Product,
 } from "@/redux/slices/productsSlice";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "@/components/ui/cards/ProductCard";
 import { useEffect } from "react";
 import api from "@/utils/api";
-import { useModal } from "@/context/ModalContext";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useModal } from "@/redux/context/ModalContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import { motion } from "framer-motion";
 import { PlusCircle, Loader } from "lucide-react";
 

@@ -6,7 +6,7 @@ import { searchProducts } from "@/redux/slices/productsSlice";
 import ProductList from "@/components/ProductList";
 import api from "@/utils/api";
 import { Product } from "@/redux/slices/productsSlice";
-import SortSelect from "@/components/SortSelect";
+import SortSelect from "@/components/ui/filters/SortSelect";
 import Pagination from "@/components/Pagination";
 import { useUpdateQueryParams } from "@/utils/useUpdateQueryParams";
 

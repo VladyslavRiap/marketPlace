@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 
 export interface Category {
@@ -53,7 +53,12 @@ export const fetchSubcategories = createAsyncThunk(
 const categoriesSlice = createSlice({
   name: "categories",
   initialState,
-  reducers: {},
+  reducers: {
+    setCategories: (state, action: PayloadAction<Category[]>) => {
+      state.categories = action.payload;
+      state.status = "succeeded";
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchCategories.pending, (state) => {
@@ -78,4 +83,5 @@ const categoriesSlice = createSlice({
   },
 });
 
+export const { setCategories } = categoriesSlice.actions;
 export default categoriesSlice.reducer;

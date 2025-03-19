@@ -5,9 +5,9 @@ import { Product } from "@/redux/slices/productsSlice";
 import api from "@/utils/api";
 import { motion } from "framer-motion";
 import ProductList from "@/components/ProductList";
-import Filters from "@/components/Filters";
-import SortSelect from "@/components/SortSelect";
-import Pagination from "@/components/Pagination";
+import Filters from "@/components/ui/filters/Filters";
+import SortSelect from "@/components/ui/filters/SortSelect";
+
 import { useUpdateQueryParams } from "@/utils/useUpdateQueryParams";
 import { Category } from "@/redux/slices/categorySlice";
 
@@ -166,7 +166,7 @@ const Home: React.FC<HomeProps> = ({
               { value: "price", label: "Price" },
               { value: "rating", label: "Rating" },
             ]}
-            placeholder="All Categories"
+            placeholder="Order"
           />
 
           <SortSelect

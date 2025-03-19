@@ -47,18 +47,17 @@ class AdminController {
       res.status(500).json({ error: "Server error" });
     }
   }
-
   static async deleteProduct(req, res) {
     const { id } = req.params;
 
     try {
       const result = await pool.query(quires.DELETE_PRODUCT, [id]);
 
-      if (result.rows.length === 0) {
+      if (result.rowCount === 0) {
         return res.status(404).json({ error: "Product not found" });
       }
 
-      res.json({ message: "Product deleted successfully" });
+      res.status(200).json({ message: "Product deleted successfully" });
     } catch (error) {
       console.error("Error deleting product:", error.message);
       res.status(500).json({ error: "Server error" });

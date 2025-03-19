@@ -5,7 +5,7 @@ import { useAppDispatch } from "@/redux/hooks";
 import { registerUser } from "@/redux/slices/authSlice";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import { motion } from "framer-motion";
 
 const RegisterPage = () => {

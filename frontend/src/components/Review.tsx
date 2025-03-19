@@ -4,8 +4,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { REVIEW_MODAL_ID, useModal } from "@/context/ModalContext";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { REVIEW_MODAL_ID, useModal } from "@/redux/context/ModalContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import { deleteReview, fetchReviews } from "@/redux/slices/reviewSlice";
 
 interface Review {

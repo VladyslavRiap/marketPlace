@@ -8,12 +8,12 @@ import {
   fetchFavorites,
   removeFromFavorites,
 } from "@/redux/slices/favoriteSlice";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { Star, Heart, ShoppingCart } from "lucide-react";
 import getAttributeIcon from "@/utils/iconutils";
 import { useEffect, useState } from "react";
-import { REVIEW_MODAL_ID, useModal } from "@/context/ModalContext";
+import { REVIEW_MODAL_ID, useModal } from "@/redux/context/ModalContext";
 import Reviews from "@/components/Review";
 import { addToCart, fetchCart } from "@/redux/slices/cartSlice";
 

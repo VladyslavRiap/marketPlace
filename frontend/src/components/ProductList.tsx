@@ -1,5 +1,5 @@
 import { Product } from "@/redux/slices/productsSlice";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "@/components/ui/cards/ProductCard";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";

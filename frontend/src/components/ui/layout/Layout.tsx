@@ -157,7 +157,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </motion.header>
 
       <motion.main
-        className="flex-grow container mx-auto p-6"
+        className="flex-grow container mx-auto "
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}

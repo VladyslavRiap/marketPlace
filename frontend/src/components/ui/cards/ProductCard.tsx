@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, ShoppingCart, Star } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { useSnackbarContext } from "@/context/SnackBarContext";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import {
   addToFavorites,
   removeFromFavorites,
