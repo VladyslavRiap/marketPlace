@@ -1,3 +1,5 @@
+// adminSlice.ts
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 
@@ -18,14 +20,21 @@ interface User {
   role: string;
 }
 
+interface Ad {
+  id: number;
+  image_url: string;
+}
+
 interface AdminState {
   products: Product[];
   users: User[];
+  ads: Ad[];
 }
 
 const initialState: AdminState = {
   products: [],
   users: [],
+  ads: [],
 };
 
 export const fetchProducts = createAsyncThunk(
@@ -65,6 +74,33 @@ export const unblockUser = createAsyncThunk(
   }
 );
 
+export const fetchAds = createAsyncThunk("admin/fetchAds", async () => {
+  const response = await api.get("/admin/ads");
+  return response.data;
+});
+
+export const addAd = createAsyncThunk("admin/addAd", async (files: File[]) => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("images", file);
+  });
+
+  const response = await api.post("/admin/ads", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+});
+
+export const deleteAd = createAsyncThunk(
+  "admin/deleteAd",
+  async (adId: number) => {
+    await api.delete(`/admin/ads/${adId}`);
+    return adId;
+  }
+);
+
 const adminSlice = createSlice({
   name: "admin",
   initialState,
@@ -93,6 +129,15 @@ const adminSlice = createSlice({
         if (user) {
           user.is_blocked = false;
         }
+      })
+      .addCase(fetchAds.fulfilled, (state, action) => {
+        state.ads = action.payload;
+      })
+      .addCase(addAd.fulfilled, (state, action) => {
+        state.ads = [...state.ads, ...action.payload];
+      })
+      .addCase(deleteAd.fulfilled, (state, action) => {
+        state.ads = state.ads.filter((ad) => ad.id !== action.payload);
       });
   },
 });

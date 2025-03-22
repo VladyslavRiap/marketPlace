@@ -1,23 +1,26 @@
-import { GetServerSideProps } from "next";
 import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { fetchProducts, Product } from "@/redux/slices/productsSlice";
 import { useRouter } from "next/router";
-import { Product } from "@/redux/slices/productsSlice";
-import api from "@/utils/api";
 import { motion } from "framer-motion";
 import ProductList from "@/components/ProductList";
 import Filters from "@/components/ui/filters/Filters";
 import SortSelect from "@/components/ui/filters/SortSelect";
-
 import { useUpdateQueryParams } from "@/utils/useUpdateQueryParams";
 import { Category } from "@/redux/slices/categorySlice";
+import { FaSync } from "react-icons/fa";
+import api from "@/utils/api";
+import { GetServerSideProps } from "next";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { query } = context;
   try {
-    const [productsResponse, categoriesResponse] = await Promise.all([
-      api.get("/products", { params: query }),
-      api.get("/products/categories"),
-    ]);
+    const [productsResponse, categoriesResponse, subcategoriesResponse] =
+      await Promise.all([
+        api.get("/products", { params: query }),
+        api.get("/products/categories"),
+        api.get("/products/subcategories"),
+      ]);
 
     return {
       props: {
@@ -25,6 +28,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         initialTotalPages: productsResponse.data.totalPages || 1,
         initialCurrentPage: productsResponse.data.currentPage || 1,
         categories: categoriesResponse.data as Category[],
+        subcategories: subcategoriesResponse.data || [],
       },
     };
   } catch (error) {
@@ -34,6 +38,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         initialTotalPages: 1,
         initialCurrentPage: 1,
         categories: [],
+        subcategories: [],
       },
     };
   }
@@ -44,45 +49,41 @@ interface HomeProps {
   initialTotalPages: number;
   initialCurrentPage: number;
   categories: Category[];
+  subcategories: { id: number; name: string; category_id: number }[];
 }
 
-const Home: React.FC<HomeProps> = ({
-  initialProducts,
-  initialTotalPages,
-  initialCurrentPage,
-  categories,
-}) => {
+const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>(initialProducts || []);
-  const [totalPages, setTotalPages] = useState(initialTotalPages);
-  const [currentPage, setCurrentPage] = useState(initialCurrentPage);
+  const dispatch = useAppDispatch();
+  const {
+    items: products,
+    totalPages,
+    status,
+  } = useAppSelector((state) => state.products);
+
   const [category, setCategory] = useState<string>(
     Array.isArray(router.query.category)
       ? router.query.category[0]
       : router.query.category || ""
   );
 
+  const [subcategory, setSubcategory] = useState<string>(
+    Array.isArray(router.query.subcategory)
+      ? router.query.subcategory[0]
+      : router.query.subcategory || ""
+  );
+  const currentPage = Number(
+    Array.isArray(router.query.page)
+      ? router.query.page[0]
+      : router.query.page || 1
+  );
   const [priceRange, setPriceRange] = useState<number[]>([
-    Number(
-      Array.isArray(router.query.minPrice)
-        ? router.query.minPrice[0]
-        : router.query.minPrice
-    ) || 0,
-    Number(
-      Array.isArray(router.query.maxPrice)
-        ? router.query.maxPrice[0]
-        : router.query.maxPrice
-    ) || 10000,
+    Number(router.query.minPrice) || 0,
+    Number(router.query.maxPrice) || 10000,
   ]);
 
   const [rating, setRating] = useState<number | null>(
-    router.query.rating
-      ? Number(
-          Array.isArray(router.query.rating)
-            ? router.query.rating[0]
-            : router.query.rating
-        )
-      : null
+    router.query.rating ? Number(router.query.rating) : null
   );
 
   const [sortBy, setSortBy] = useState<string>(
@@ -103,32 +104,42 @@ const Home: React.FC<HomeProps> = ({
     updateQueryParams({
       page: currentPage,
       category,
+      subcategory,
       minPrice: priceRange[0],
       maxPrice: priceRange[1],
       rating: rating || "",
       sortBy,
       order,
     });
-  }, [category, priceRange, rating, sortBy, order, currentPage]);
+  }, [
+    category,
+    subcategory,
+    priceRange,
+    rating,
+    sortBy,
+    order,
+    router.query.page,
+  ]);
 
   useEffect(() => {
-    const fetchFilteredProducts = async () => {
-      try {
-        const { data } = await api.get("/products", { params: router.query });
-        setProducts(data.products);
-        setTotalPages(data.totalPages);
-        setCurrentPage(data.currentPage);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
-    fetchFilteredProducts();
-  }, [router.query]);
+    dispatch(fetchProducts(router.query));
+  }, [router.query, dispatch]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+      router.push({
+        pathname: router.pathname,
+        query: { ...router.query, page: newPage },
+      });
     }
+  };
+
+  const resetSortBy = () => {
+    setSortBy("id");
+  };
+
+  const resetOrder = () => {
+    setOrder("asc");
   };
 
   return (
@@ -147,45 +158,64 @@ const Home: React.FC<HomeProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex flex-wrap gap-6 mb-8 justify-between bg-white p-6 rounded-xl shadow-lg m-auto ">
+        <div className="flex gap-6 mb-8 bg-white p-6 rounded-xl shadow-lg m-auto">
           <Filters
             category={category}
             setCategory={setCategory}
+            subcategory={subcategory}
+            setSubcategory={setSubcategory}
             priceRange={priceRange}
             setPriceRange={setPriceRange}
             rating={rating}
             setRating={setRating}
             categories={categories.map((c) => c.name)}
+            subcategories={subcategories.map((c) => c.name)}
           />
 
-          <SortSelect
-            value={sortBy}
-            onChange={setSortBy}
-            options={[
-              { value: "name", label: "Name" },
-              { value: "price", label: "Price" },
-              { value: "rating", label: "Rating" },
-            ]}
-            placeholder="Order"
-          />
+          <div className="flex items-center gap-2">
+            <SortSelect
+              value={sortBy}
+              onChange={setSortBy}
+              options={[
+                { value: "name", label: "Name" },
+                { value: "price", label: "Price" },
+                { value: "rating", label: "Rating" },
+              ]}
+              placeholder="Sort By"
+            />
+            <button
+              onClick={resetSortBy}
+              className="p-2 hover:bg-gray-100 rounded"
+            >
+              <FaSync />
+            </button>
+          </div>
 
-          <SortSelect
-            value={order}
-            onChange={setOrder}
-            options={[
-              { value: "asc", label: "Ascending" },
-              { value: "desc", label: "Descending" },
-            ]}
-            placeholder="Order"
-          />
+          <div className="flex items-center gap-2">
+            <SortSelect
+              value={order}
+              onChange={setOrder}
+              options={[
+                { value: "asc", label: "Ascending" },
+                { value: "desc", label: "Descending" },
+              ]}
+              placeholder="Order"
+            />
+            <button
+              onClick={resetOrder}
+              className="p-2 hover:bg-gray-100 rounded"
+            >
+              <FaSync />
+            </button>
+          </div>
         </div>
       </motion.div>
 
       <ProductList
         products={products}
-        status={products.length > 0 ? "succeeded" : "idle"}
+        status={status}
         totalPages={totalPages}
-        currentPage={currentPage}
+        currentPage={Number(router.query.page) || 1}
         onPageChange={handlePageChange}
       />
     </div>

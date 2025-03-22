@@ -2,6 +2,7 @@ import { GetServerSideProps } from "next";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   deleteProduct,
+  fetchProductForEdit,
   fetchSellerProducts,
   Product,
 } from "@/redux/slices/productsSlice";
@@ -33,8 +34,8 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
   const handleEdit = async (id: number) => {
     try {
-      const response = await api.get(`/products/${id}`);
-      openModal("productModal", { productToEdit: response.data });
+      const product = await dispatch(fetchProductForEdit(id)).unwrap();
+      openModal("productModal", { productToEdit: product });
     } catch (error) {
       console.error("Ошибка при загрузке товара для редактирования", error);
       showMessage("Не удалось загрузить данные товара", "error");

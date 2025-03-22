@@ -3,7 +3,18 @@ const router = express.Router();
 const adminController = require("../controllers/admin.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 const checkRole = require("../middlewares/role.middleware");
-
+const multer = require("multer");
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"), false);
+    }
+  },
+}).array("images", 5);
 /**
  * @swagger
  * /api/admin/stats:
@@ -185,5 +196,7 @@ router.put(
   checkRole(["admin"]),
   adminController.unblockUser
 );
-
+router.get("/ads", adminController.getAds);
+router.post("/ads", upload, adminController.addAd);
+router.delete("/ads/:id", adminController.deleteAd);
 module.exports = router;

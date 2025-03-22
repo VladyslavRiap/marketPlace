@@ -152,7 +152,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         <button
           onClick={handleFavoriteClick}
-          className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-red-500 hover:text-white transition"
+          className={`absolute top-3 right-3 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-md  hover:text-white transition ${
+            !isFavorite ? "hover:bg-red-500" : "hover:bg-gray-400"
+          }`}
         >
           <Heart
             className={`w-6 h-6 ${

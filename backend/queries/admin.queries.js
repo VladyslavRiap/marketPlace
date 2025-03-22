@@ -14,4 +14,7 @@ module.exports = {
   BLOCK_USER: "UPDATE users SET is_blocked = true WHERE id = $1",
 
   UNBLOCK_USER: "UPDATE users SET is_blocked = false WHERE id = $1",
+  GET_ADS: "SELECT * FROM ads",
+  ADD_AD: "INSERT INTO ads (image_url) VALUES ($1) RETURNING *",
+  DELETE_AD: "DELETE FROM ads WHERE id = $1",
 };

@@ -15,10 +15,11 @@ const upload = multer({
       cb(new Error("Only image files are allowed"), false);
     }
   },
-}).array("images", 5); // Позволяет загружать до 5 изображений
+}).array("images", 5);
 
 router.get("/mine", authMiddleware, productController.getSellerProducts);
 router.get("/categories", productController.getCategories);
+router.get("/subcategories", productController.getSubCategories);
 router.post("/:productId/attributes", productController.addProductAttributes);
 /**
  * @swagger

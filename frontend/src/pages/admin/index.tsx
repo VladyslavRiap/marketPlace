@@ -22,6 +22,18 @@ const StatsPage: React.FC<StatsPageProps> = ({ totalUsers, totalProducts }) => {
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   try {
+    const { data: userData } = await api.get("/users/me", {
+      headers: { cookie: req.headers.cookie || "" },
+    });
+    if (userData.role !== "admin") {
+      return {
+        redirect: {
+          destination: "/",
+          permanent: false,
+        },
+      };
+    }
+
     const { data } = await api.get("/admin/stats", {
       headers: { cookie: req.headers.cookie || "" },
     });

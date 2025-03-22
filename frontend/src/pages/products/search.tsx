@@ -7,7 +7,6 @@ import ProductList from "@/components/ProductList";
 import api from "@/utils/api";
 import { Product } from "@/redux/slices/productsSlice";
 import SortSelect from "@/components/ui/filters/SortSelect";
-import Pagination from "@/components/Pagination";
 import { useUpdateQueryParams } from "@/utils/useUpdateQueryParams";
 
 interface SearchPageProps {
@@ -70,6 +69,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [currentPage, setCurrentPage] = useState(initialCurrentPage);
+
   const [sortBy, setSortBy] = useState<string>(
     Array.isArray(router.query.sortBy)
       ? router.query.sortBy[0]
@@ -107,13 +107,29 @@ const SearchPage: React.FC<SearchPageProps> = ({
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
-      updateQueryParams({ page: newPage });
+      updateQueryParams({ page: newPage, query });
     }
   };
 
   useEffect(() => {
-    updateQueryParams({ sortBy, order, page: currentPage });
-  }, [sortBy, order, currentPage]);
+    const newSortBy = Array.isArray(router.query.sortBy)
+      ? router.query.sortBy[0]
+      : router.query.sortBy || "name";
+    const newOrder = Array.isArray(router.query.order)
+      ? router.query.order[0]
+      : router.query.order || "asc";
+
+    if (newSortBy !== sortBy) {
+      setSortBy(newSortBy);
+    }
+    if (newOrder !== order) {
+      setOrder(newOrder);
+    }
+  }, [router.query.sortBy, router.query.order]);
+
+  useEffect(() => {
+    updateQueryParams({ sortBy, order, page: currentPage, query });
+  }, [sortBy, order, currentPage, query]);
 
   return (
     <div className="container mx-auto px-4 py-8">

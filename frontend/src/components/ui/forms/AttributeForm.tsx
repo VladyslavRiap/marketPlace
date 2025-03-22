@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import api from "@/utils/api";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import {
+  fetchAttributes,
+  addProductAttributes,
+} from "@/redux/slices/productsSlice";
 
 interface AttributeFormProps {
   productId: number | null;
@@ -12,35 +16,33 @@ const AttributeForm: React.FC<AttributeFormProps> = ({
   subcategoryId,
   onSubmit,
 }) => {
-  const [attributes, setAttributes] = useState<
-    { id: number; name: string; type: string }[]
-  >([]);
+  const dispatch = useAppDispatch();
+  const { attributes } = useAppSelector((state) => state.products);
   const [values, setValues] = useState<
     { attribute_id: number; value: string }[]
   >([]);
-  console.log(subcategoryId);
+
   useEffect(() => {
-    const fetchAttributes = async () => {
-      if (subcategoryId) {
-        try {
-          const { data } = await api.get(
-            `/products/subcategories/${subcategoryId}/attributes`
-          );
-          setAttributes(data);
-          setValues(
-            data.map((attr: any) => ({ attribute_id: attr.id, value: "" }))
-          );
-        } catch (error) {
-          console.error("Ошибка загрузки атрибутов:", error);
-        }
-      }
-    };
-    fetchAttributes();
-  }, [subcategoryId]);
+    if (subcategoryId) {
+      dispatch(fetchAttributes(subcategoryId));
+    }
+  }, [subcategoryId, dispatch]);
+
+  useEffect(() => {
+    if (attributes.length > 0) {
+      setValues(
+        attributes.map((attr) => ({ attribute_id: attr.id, value: "" }))
+      );
+    }
+  }, [attributes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(values);
+    if (productId) {
+      dispatch(addProductAttributes({ productId, attributes: values })).then(
+        () => onSubmit(values)
+      );
+    }
   };
 
   return (

@@ -69,10 +69,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto flex justify-between items-center">
-          <Link
-            href="/products"
-            className="text-3xl font-extrabold tracking-wide"
-          >
+          <Link href="/" className="text-3xl font-extrabold tracking-wide">
             Marketplace
           </Link>
 

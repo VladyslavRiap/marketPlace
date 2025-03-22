@@ -14,7 +14,6 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const { user } = useAppSelector((state) => state.auth);
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const { showMessage } = useSnackbarContext();
 
@@ -35,12 +34,18 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+
+    if (!form.email.includes("@") || !form.email.includes(".")) {
+      showMessage("Введите корректный email", "error");
+      setLoading(false);
+      return;
+    }
 
     try {
       const result = await dispatch(loginUser(form)).unwrap();
       if (result) {
         await dispatch(fetchUser());
+        showMessage("Вход успешен", "success");
       }
     } catch (err: any) {
       showMessage(err || "Ошибка входа", "error");
@@ -69,12 +74,11 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
         className="flex flex-col gap-4 max-w-md mx-auto"
       >
         <input
-          type="email"
+          type="text"
           placeholder="Email"
           className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
         />
         <input
           type="password"
@@ -84,7 +88,6 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
         />
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <button
           className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition duration-300"
           type="submit"

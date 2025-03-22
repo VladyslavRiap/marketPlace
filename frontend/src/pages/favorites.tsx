@@ -1,13 +1,9 @@
 import { GetServerSideProps } from "next";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import {
-  fetchFavorites,
-  removeFromFavorites,
-} from "@/redux/slices/favoriteSlice";
+import { fetchFavorites } from "@/redux/slices/favoriteSlice";
 import { motion } from "framer-motion";
-import { useSnackbarContext } from "@/redux/context/SnackBarContext";
-import Link from "next/link";
+
 import api from "@/utils/api";
 import ProductCard from "@/components/ui/cards/ProductCard";
 
@@ -28,7 +24,6 @@ interface FavoritesPageProps {
 
 const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
   const dispatch = useAppDispatch();
-  const { showMessage } = useSnackbarContext();
 
   const { favorites, loading } = useAppSelector((state) => state.favorite);
 
@@ -37,18 +32,6 @@ const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
       dispatch(fetchFavorites());
     }
   }, [dispatch, favorites.length]);
-
-  const handleRemoveFromFavorites = async (favoriteId: number) => {
-    try {
-      await dispatch(removeFromFavorites(favoriteId)).unwrap();
-      showMessage("Товар удален из избранного", "success");
-    } catch (error: any) {
-      showMessage(
-        "Ошибка при удалении из избранного: " + error.message,
-        "error"
-      );
-    }
-  };
 
   if (loading) {
     return (

@@ -29,8 +29,9 @@ export const registerUser = createAsyncThunk(
     { dispatch, rejectWithValue }
   ) => {
     try {
-      await api.post("/auth/register", userData);
-      await dispatch(fetchUser());
+      const response = await api.post("/auth/register", userData);
+      const userResponse = await dispatch(fetchUser()).unwrap();
+      return userResponse;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.error || "Ошибка регистрации"
@@ -141,13 +142,13 @@ const authSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state) => {
+      .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.user = action.payload;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;

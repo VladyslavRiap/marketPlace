@@ -1,5 +1,7 @@
 const pool = require("../config/db");
 const quires = require("../queries/admin.queries");
+
+const uploadFile = require("../services/s3");
 class AdminController {
   static async getStats(req, res) {
     try {
@@ -87,6 +89,64 @@ class AdminController {
       await pool.query(quires.UNBLOCK_USER, [req.params.id]);
       res.json({ message: "User unblocked successfully" });
     } catch (error) {
+      res.status(500).json({ error: "Server error" });
+    }
+  }
+  static async addAd(req, res) {
+    try {
+      let imageUrls = [];
+
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const imageUrl = await uploadFile(
+            "marketplace-my-1-2-3-4",
+            file.originalname,
+            file.buffer
+          );
+          imageUrls.push(imageUrl);
+        }
+      }
+
+      if (imageUrls.length > 0) {
+        const insertedAds = [];
+        for (const imageUrl of imageUrls) {
+          const result = await pool.query(quires.ADD_AD, [imageUrl]);
+          insertedAds.push(result.rows[0]);
+        }
+
+        res.status(201).json(insertedAds);
+      } else {
+        res.status(400).json({ error: "No images were uploaded" });
+      }
+    } catch (error) {
+      console.error("Error adding ad:", error.message);
+      res.status(500).json({ error: "Server error" });
+    }
+  }
+
+  static async deleteAd(req, res) {
+    const { id } = req.params;
+
+    try {
+      const result = await pool.query(quires.DELETE_AD, [id]);
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: "Ad not found" });
+      }
+
+      res.status(200).json({ message: "Ad deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting ad:", error.message);
+      res.status(500).json({ error: "Server error" });
+    }
+  }
+
+  static async getAds(req, res) {
+    try {
+      const result = await pool.query(quires.GET_ADS);
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching ads:", error.message);
       res.status(500).json({ error: "Server error" });
     }
   }

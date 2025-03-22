@@ -23,7 +23,7 @@ const SortSelect: React.FC<SortSelectProps> = ({
 
   return (
     <Listbox value={value} onChange={onChange}>
-      <div className="relative w-48 z-10 m-auto">
+      <div className="relative w-44 z-10 ">
         <ListboxButton className="w-full p-3 flex justify-between items-center  bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <span className="block truncate">
             {selectedOption ? selectedOption.label : placeholder}

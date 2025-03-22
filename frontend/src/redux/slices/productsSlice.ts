@@ -28,6 +28,7 @@ interface ProductsState {
   status: "idle" | "loading" | "succeeded" | "failed";
   sellerStatus: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
+  attributes: { id: number; name: string; type: string }[];
 }
 interface SearchProductsParams {
   query: string;
@@ -43,6 +44,7 @@ const initialState: ProductsState = {
   status: "idle",
   sellerStatus: "idle",
   error: null,
+  attributes: [],
 };
 
 export const fetchProducts = createAsyncThunk(
@@ -130,7 +132,21 @@ export const deleteProduct = createAsyncThunk(
     }
   }
 );
-
+export const fetchAttributes = createAsyncThunk(
+  "products/fetchAttributes",
+  async (subcategoryId: number, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(
+        `/products/subcategories/${subcategoryId}/attributes`
+      );
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data || "Ошибка при загрузке атрибутов"
+      );
+    }
+  }
+);
 export const addProductAttributes = createAsyncThunk(
   "products/addProductAttributes",
   async (
@@ -147,7 +163,19 @@ export const addProductAttributes = createAsyncThunk(
     }
   }
 );
-
+export const fetchProductForEdit = createAsyncThunk(
+  "products/fetchProductForEdit",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/products/${id}`);
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data || "Ошибка при загрузке товара для редактирования"
+      );
+    }
+  }
+);
 const productsSlice = createSlice({
   name: "products",
   initialState,
@@ -233,6 +261,29 @@ const productsSlice = createSlice({
         state.status = "succeeded";
       })
       .addCase(addProductAttributes.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+      .addCase(fetchAttributes.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchAttributes.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.attributes = action.payload;
+      })
+      .addCase(fetchAttributes.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+      .addCase(fetchProductForEdit.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchProductForEdit.fulfilled, (state, action) => {
+        state.status = "succeeded";
+      })
+      .addCase(fetchProductForEdit.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
       });

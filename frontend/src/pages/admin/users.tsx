@@ -28,6 +28,17 @@ const UsersPage: React.FC<UsersPageProps> = ({ users }) => {
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   try {
+    const { data: userData } = await api.get("/users/me", {
+      headers: { cookie: req.headers.cookie || "" },
+    });
+    if (userData.role !== "admin") {
+      return {
+        redirect: {
+          destination: "/",
+          permanent: false,
+        },
+      };
+    }
     const { data: users } = await api.get("/admin/users", {
       headers: { cookie: req.headers.cookie || "" },
     });

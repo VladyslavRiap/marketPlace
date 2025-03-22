@@ -10,6 +10,7 @@ class ProductController {
         page = 1,
         limit = 12,
         category,
+        subcategory, // Добавлен новый параметр
         minPrice,
         maxPrice,
         rating,
@@ -50,13 +51,17 @@ class ProductController {
 
       let values = [];
       let valueIndex = 1;
-
       let filters = [];
 
       if (hasFilters) {
         if (category) {
           filters.push(`c.name = $${valueIndex++}`);
           values.push(category);
+        }
+        if (subcategory) {
+          // Фильтрация по подкатегории
+          filters.push(`s.name = $${valueIndex++}`);
+          values.push(subcategory);
         }
         if (minPrice) {
           filters.push(`p.price >= $${valueIndex++}`);
@@ -109,6 +114,7 @@ class ProductController {
       }
     };
   }
+
   static async getProductById(req, res) {
     const { id } = req.params;
 
@@ -484,6 +490,15 @@ class ProductController {
   static async getCategories(req, res) {
     try {
       const result = await pool.query("SELECT id, name FROM categories");
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Ошибка при получении категорий:", error.message);
+      res.status(500).json({ error: "Ошибка сервера" });
+    }
+  }
+  static async getSubCategories(req, res) {
+    try {
+      const result = await pool.query("SELECT id, name FROM subcategories");
       res.json(result.rows);
     } catch (error) {
       console.error("Ошибка при получении категорий:", error.message);

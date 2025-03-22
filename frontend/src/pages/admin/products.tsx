@@ -38,8 +38,19 @@ const ProductsPage: React.FC<ProductsPageProps> = ({
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   try {
+    const { data: userData } = await api.get("/users/me", {
+      headers: { cookie: req.headers.cookie || "" },
+    });
+    if (userData.role !== "admin") {
+      return {
+        redirect: {
+          destination: "/",
+          permanent: false,
+        },
+      };
+    }
     const { data } = await api.get("/products");
 
     const products = data.products || [];
