@@ -7,17 +7,17 @@ module.exports = {
   DELETE_FROM_CART:
     "DELETE FROM cart_items WHERE user_id = $1 AND product_id = $2",
   GET_CART: `SELECT 
-    p.id, 
-    p.name, 
-    p.price, 
-    p.image_url, 
-    c.quantity, 
-    (p.price * c.quantity) AS total_price,
-    (
-        SELECT json_agg(pi.image_url)
-        FROM product_images pi
-        WHERE pi.product_id = p.id
-    ) AS images
+  p.id, 
+  p.name, 
+  p.price, 
+  p.image_url, 
+  c.quantity, 
+  (p.price * c.quantity) AS total_price,
+  (
+      SELECT json_agg(pi.image_url)
+      FROM product_images pi
+      WHERE pi.product_id = p.id
+  ) AS images
 FROM 
     cart_items c
 JOIN 

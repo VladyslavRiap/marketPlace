@@ -5,4 +5,6 @@ module.exports = {
     "SELECT id FROM notifications WHERE id = $1 AND user_id = $2",
   SET_IS_READ: "UPDATE notifications SET is_read = true WHERE id = $1",
   DELETE_NOTIFICATION: "DELETE FROM notifications WHERE id = $1",
+  CREATE_NOTIFICATION:
+    "INSERT INTO notifications (user_id, message, is_read) VALUES ($1, $2, false) RETURNING *",
 };

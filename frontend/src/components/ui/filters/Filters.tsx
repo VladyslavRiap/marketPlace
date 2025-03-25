@@ -46,9 +46,9 @@ const Filters: React.FC<FiltersProps> = ({
         />
         <button
           onClick={resetCategory}
-          className="p-2 hover:bg-gray-100 rounded"
+          className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
         >
-          <FaSync />
+          <FaSync className="hover:text-blue-500" />
         </button>
       </div>
 
@@ -61,7 +61,7 @@ const Filters: React.FC<FiltersProps> = ({
         />
         <button
           onClick={resetSubcategory}
-          className="p-2 hover:bg-gray-100 rounded"
+          className="p-2  rounded-full hover:bg-gray-400 hover:text-blue-500"
         >
           <FaSync />
         </button>
@@ -81,9 +81,9 @@ const Filters: React.FC<FiltersProps> = ({
         </div>
         <button
           onClick={resetPriceRange}
-          className="p-2 hover:bg-gray-100 rounded"
+          className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
         >
-          <FaSync />
+          <FaSync className="hover:text-blue-500" />
         </button>
       </div>
 
@@ -101,8 +101,11 @@ const Filters: React.FC<FiltersProps> = ({
             />
           ))}
         </div>
-        <button onClick={resetRating} className="p-2 hover:bg-gray-100 rounded">
-          <FaSync />
+        <button
+          onClick={resetRating}
+          className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
+        >
+          <FaSync className="hover:text-blue-500" />
         </button>
       </div>
     </div>

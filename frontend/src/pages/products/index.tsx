@@ -185,9 +185,9 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
             />
             <button
               onClick={resetSortBy}
-              className="p-2 hover:bg-gray-100 rounded"
+              className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
             >
-              <FaSync />
+              <FaSync className="hover:text-blue-500" />
             </button>
           </div>
 
@@ -203,9 +203,9 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
             />
             <button
               onClick={resetOrder}
-              className="p-2 hover:bg-gray-100 rounded"
+              className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
             >
-              <FaSync />
+              <FaSync className="hover:text-blue-500" />
             </button>
           </div>
         </div>

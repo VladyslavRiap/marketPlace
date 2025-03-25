@@ -2,14 +2,17 @@ import ProductModal from "@/components/ui/modals/ProductModal";
 import ReviewModal from "@/components/ui/modals/ReviewModal";
 import AddsModal from "@/components/ui/modals/AddsModal";
 import { createContext, ReactNode, useContext, useState } from "react";
+import CheckoutModal from "@/components/ui/modals/CheckoutModal";
 
 export const PRODUCT_MODAL_ID = "productModal";
 export const REVIEW_MODAL_ID = "reviewModal";
 export const ADD_AD_MODAL_ID = "addsModal";
+export const CHECKOUT_MODAL_ID = "checkoutModal";
 export const modalsLookUp: { [key: string]: React.FC<any> } = {
   [PRODUCT_MODAL_ID]: ProductModal,
   [REVIEW_MODAL_ID]: ReviewModal,
   [ADD_AD_MODAL_ID]: AddsModal,
+  [CHECKOUT_MODAL_ID]: CheckoutModal,
 };
 
 interface ModalContextValue {

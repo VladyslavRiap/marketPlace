@@ -13,6 +13,7 @@ import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import Link from "next/link";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { CHECKOUT_MODAL_ID, useModal } from "@/redux/context/ModalContext";
 
 interface CartItem {
   id: number;
@@ -36,7 +37,19 @@ const CartPage = ({ initialCart }: CartPageProps) => {
   const [localCart, setLocalCart] = useState(initialCart.items);
   const [totalAmount, setTotalAmount] = useState(initialCart.totalAmount);
   const [isClearCartOpen, setIsClearCartOpen] = useState(false);
+  const { openModal, closeModal } = useModal();
 
+  const handleCheckout = async (deliveryAddress: string) => {
+    try {
+      await api.post("/orders", { deliveryAddress });
+      showMessage("Заказ успешно создан!", "success");
+      dispatch(clearCart());
+      setLocalCart([]);
+      setTotalAmount(0);
+    } catch (error: any) {
+      showMessage("Ошибка при создании заказа: " + error.message, "error");
+    }
+  };
   const handleRemove = async (productId: number) => {
     try {
       await dispatch(removeFromCart(productId)).unwrap();
@@ -132,7 +145,6 @@ const CartPage = ({ initialCart }: CartPageProps) => {
                 Удалить
               </p>
             </div>
-
             <div className="space-y-6">
               {localCart.map((item) => (
                 <motion.div
@@ -193,7 +205,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
               ))}
             </div>
 
-            <div className="mt-8 p-6 bg-white rounded-lg shadow-md flex flex-col items-center md:flex-row md:justify-between">
+            <div className="mt-8 p-6 bg-white rounded-lg shadow-md flex flex-col items-center md:flex-row md:justify-between space-y-4 md:space-y-0 md:space-x-4">
               <p className="text-3xl font-bold text-gray-900">
                 Итого:
                 <span className="text-red-600">
@@ -201,12 +213,27 @@ const CartPage = ({ initialCart }: CartPageProps) => {
                 </span>
               </p>
 
-              <button
-                onClick={() => setIsClearCartOpen(true)}
-                className="mt-4 md:mt-0 bg-red-500 text-white px-8 py-4 rounded-lg hover:bg-red-600 transition text-xl"
-              >
-                Очистить корзину
-              </button>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                <button
+                  onClick={() => setIsClearCartOpen(true)}
+                  className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition text-lg"
+                >
+                  Очистить корзину
+                </button>
+                <button
+                  onClick={() =>
+                    openModal(CHECKOUT_MODAL_ID, {
+                      items: localCart,
+                      totalAmount,
+                      onCheckout: handleCheckout,
+                    })
+                  }
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition text-lg"
+                  disabled={localCart.length === 0}
+                >
+                  Оформить заказ
+                </button>
+              </div>
             </div>
           </>
         )}

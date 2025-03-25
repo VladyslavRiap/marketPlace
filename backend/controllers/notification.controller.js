@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const queries = require("../queries/notification.queries");
+
 class NotificationController {
   static async getNotifications(req, res) {
     const { userId } = req.user;
@@ -59,5 +60,16 @@ class NotificationController {
       res.status(500).json({ error: "Server error" });
     }
   }
+
+  static async createNotification({ userId, message }) {
+    const query = `
+      INSERT INTO notifications (user_id, message, is_read)
+      VALUES ($1, $2, false)
+      RETURNING *;
+    `;
+    const result = await pool.query(query, [userId, message]);
+    return result.rows[0];
+  }
 }
+
 module.exports = NotificationController;
