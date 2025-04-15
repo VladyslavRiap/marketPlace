@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchProducts, Product } from "@/redux/slices/productsSlice";
+import { fetchProducts } from "@/redux/slices/productsSlice";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import ProductList from "@/components/ProductList";
@@ -8,9 +8,17 @@ import Filters from "@/components/ui/filters/Filters";
 import SortSelect from "@/components/ui/filters/SortSelect";
 import { useUpdateQueryParams } from "@/utils/useUpdateQueryParams";
 import { Category } from "@/redux/slices/categorySlice";
-import { FaSync } from "react-icons/fa";
+import { FaFilter, FaSync } from "react-icons/fa";
 import api from "@/utils/api";
 import { GetServerSideProps } from "next";
+import Head from "next/head";
+import { addToCart } from "@/redux/slices/cartSlice";
+import {
+  addToFavorites,
+  removeFromFavorites,
+} from "@/redux/slices/favoriteSlice";
+import { Product } from "../../../types/product";
+import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { query } = context;
@@ -60,7 +68,10 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
     totalPages,
     status,
   } = useAppSelector((state) => state.products);
-
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const { items: cartItems } = useAppSelector((state) => state.cart);
+  const { favorites } = useAppSelector((state) => state.favorite);
+  const { showMessage } = useSnackbarContext();
   const [category, setCategory] = useState<string>(
     Array.isArray(router.query.category)
       ? router.query.category[0]
@@ -72,11 +83,13 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
       ? router.query.subcategory[0]
       : router.query.subcategory || ""
   );
+
   const currentPage = Number(
     Array.isArray(router.query.page)
       ? router.query.page[0]
       : router.query.page || 1
   );
+
   const [priceRange, setPriceRange] = useState<number[]>([
     Number(router.query.minPrice) || 0,
     Number(router.query.maxPrice) || 10000,
@@ -99,6 +112,37 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
   );
 
   const updateQueryParams = useUpdateQueryParams();
+  const filtersRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        mobileFiltersOpen &&
+        filtersRef.current &&
+        !filtersRef.current.contains(event.target as Node)
+      ) {
+        setMobileFiltersOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [mobileFiltersOpen]);
+  const handleCategoryChange = (newCategory: string) => {
+    setCategory(newCategory);
+
+    if (newCategory === "") {
+      setSubcategory("");
+    }
+  };
+  useEffect(() => {
+    if (mobileFiltersOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [mobileFiltersOpen]);
 
   useEffect(() => {
     updateQueryParams({
@@ -111,15 +155,7 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
       sortBy,
       order,
     });
-  }, [
-    category,
-    subcategory,
-    priceRange,
-    rating,
-    sortBy,
-    order,
-    router.query.page,
-  ]);
+  }, [category, subcategory, priceRange, rating, sortBy, order, currentPage]);
 
   useEffect(() => {
     dispatch(fetchProducts(router.query));
@@ -133,92 +169,162 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
       });
     }
   };
-
-  const resetSortBy = () => {
-    setSortBy("id");
+  const handleAddToCart = async (product: Product) => {
+    try {
+      await dispatch(addToCart(product.id)).unwrap();
+      showMessage("Product added to cart", "success");
+    } catch (error) {
+      showMessage("Failed to add to cart", "error");
+    }
   };
 
-  const resetOrder = () => {
-    setOrder("asc");
+  const handleToggleFavorite = async (product: Product) => {
+    const isFavorite = favorites.some((fav) => fav.id === product.id);
+    try {
+      if (isFavorite) {
+        await dispatch(removeFromFavorites(product.id)).unwrap();
+        showMessage("Product removed from favorites", "info");
+      } else {
+        await dispatch(addToFavorites(product.id)).unwrap();
+        showMessage("Product added to favorites", "success");
+      }
+    } catch (error) {
+      showMessage("An error occurred", "error");
+    }
+  };
+
+  const isInCart = (productId: number) => {
+    return cartItems.some((item) => item.id === productId);
+  };
+  const isFavorite = (productId: number) => {
+    return favorites.some((fav) => fav.id === productId);
   };
 
   return (
-    <div className="px-6 py-12 bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
-      <motion.h1
-        className="text-4xl font-bold text-center text-gray-900 mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        Products
-      </motion.h1>
+    <>
+      <Head>
+        <title>Product Catalog</title>
+        <meta name="description" content="Wide selection of products" />
+      </Head>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex gap-6 mb-8 bg-white p-6 rounded-xl shadow-lg m-auto">
-          <Filters
-            category={category}
-            setCategory={setCategory}
-            subcategory={subcategory}
-            setSubcategory={setSubcategory}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            rating={rating}
-            setRating={setRating}
-            categories={categories.map((c) => c.name)}
-            subcategories={subcategories.map((c) => c.name)}
-          />
-
-          <div className="flex items-center gap-2">
-            <SortSelect
-              value={sortBy}
-              onChange={setSortBy}
-              options={[
-                { value: "name", label: "Name" },
-                { value: "price", label: "Price" },
-                { value: "rating", label: "Rating" },
-              ]}
-              placeholder="Sort By"
-            />
-            <button
-              onClick={resetSortBy}
-              className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex justify-between items-center mb-6 lg:hidden">
+            <motion.h1
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-2xl font-bold text-gray-900"
             >
-              <FaSync className="hover:text-blue-500" />
+              Catalog
+            </motion.h1>
+            <button
+              onClick={() => setMobileFiltersOpen(true)}
+              className="p-2 rounded-lg bg-indigo-600 text-white flex items-center gap-2"
+            >
+              <FaFilter className="w-4 h-4" />
+              <span>Filters</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <SortSelect
-              value={order}
-              onChange={setOrder}
-              options={[
-                { value: "asc", label: "Ascending" },
-                { value: "desc", label: "Descending" },
-              ]}
-              placeholder="Order"
-            />
-            <button
-              onClick={resetOrder}
-              className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
+          <div className="flex flex-col lg:flex-row gap-6">
+            <motion.div
+              ref={filtersRef}
+              initial={{ opacity: 0, x: 0 }}
+              animate={{
+                opacity: 1,
+                x: mobileFiltersOpen
+                  ? 0
+                  : typeof window !== "undefined" && window.innerWidth < 1024
+                  ? -320
+                  : 0,
+              }}
+              transition={{ duration: 0.3 }}
+              className={`fixed inset-y-0 left-0 w-full z-50
+    lg:static lg:z-auto lg:w-72
+    bg-white p-6 overflow-y-auto
+    ${mobileFiltersOpen ? "block" : "hidden lg:block"}`}
             >
-              <FaSync className="hover:text-blue-500" />
-            </button>
+              <div className="flex justify-between items-center mb-4 lg:hidden">
+                <h2 className="text-lg font-medium">Filters</h2>
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <Filters
+                category={category}
+                setCategory={handleCategoryChange}
+                subcategory={subcategory}
+                setSubcategory={setSubcategory}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                rating={rating}
+                setRating={setRating}
+                categories={categories.map((c) => c.name)}
+                subcategories={subcategories.map((c) => c.name)}
+              />
+            </motion.div>
+
+            <div
+              className={`flex-1  ${
+                mobileFiltersOpen ? "hidden lg:block" : "block"
+              }`}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-wrap gap-4 justify-between items-center"
+              >
+                <div className="text-sm text-gray-600">
+                  Found: {products.length} products
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-40">
+                    <SortSelect
+                      value={sortBy}
+                      onChange={setSortBy}
+                      options={[
+                        { value: "name", label: "By Name" },
+                        { value: "price", label: "By Price" },
+                        { value: "rating", label: "By Rating" },
+                      ]}
+                      placeholder="Sort"
+                    />
+                  </div>
+                  <div className="w-40">
+                    <SortSelect
+                      value={order}
+                      onChange={setOrder}
+                      options={[
+                        { value: "asc", label: "Ascending" },
+                        { value: "desc", label: "Descending" },
+                      ]}
+                      placeholder="Order"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+
+              <ProductList
+                products={products}
+                status={status}
+                totalPages={totalPages}
+                currentPage={Number(router.query.page) || 1}
+                onPageChange={handlePageChange}
+                cardSize="medium"
+                onAddToCart={(product) => handleAddToCart(product)}
+                onToggleFavorite={(product) => handleToggleFavorite(product)}
+                isInCart={isInCart}
+                isFavorite={isFavorite}
+              />
+            </div>
           </div>
         </div>
-      </motion.div>
-
-      <ProductList
-        products={products}
-        status={status}
-        totalPages={totalPages}
-        currentPage={Number(router.query.page) || 1}
-        onPageChange={handlePageChange}
-      />
-    </div>
+      </div>
+    </>
   );
 };
 

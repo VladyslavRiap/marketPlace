@@ -6,6 +6,8 @@ import cartReducer from "@/redux/slices/cartSlice";
 import categoryReducer from "@/redux/slices/categorySlice";
 import reviewReducer from "@/redux/slices/reviewSlice";
 import adminReducer from "@/redux/slices/adminSlice";
+import notificationsReducer from "@/redux/slices/notificationsSlice";
+import ordersReducer from "@/redux/slices/orderSlice";
 export const store = configureStore({
   reducer: {
     products: productsReducer,
@@ -15,6 +17,8 @@ export const store = configureStore({
     categories: categoryReducer,
     reviews: reviewReducer,
     admin: adminReducer,
+    notifications: notificationsReducer,
+    orders: ordersReducer,
   },
 });
 

@@ -1,29 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const PriceInput: React.FC<{
+interface PriceInputProps {
   value: number;
   onChange: (val: number) => void;
-}> = ({ value, onChange }) => {
-  const [displayValue, setDisplayValue] = useState(value.toString());
+  label?: string;
+  className?: string;
+  required?: boolean;
+}
+
+const PriceInput = ({
+  value,
+  onChange,
+  required = false,
+  label,
+  className = "",
+}: PriceInputProps) => {
+  const [displayValue, setDisplayValue] = useState("");
+
+  useEffect(() => {
+    setDisplayValue(value.toLocaleString("ru-RU"));
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/[^\d]/g, "");
-    const numericValue = Number(rawValue);
-    setDisplayValue(numericValue.toLocaleString("ru-RU"));
+    const rawValue = e.target.value.replace(/\D/g, "");
+    const numericValue = rawValue ? parseInt(rawValue, 10) : 0;
     onChange(numericValue);
   };
 
   return (
-    <div className="relative">
-      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-        $
-      </span>
-      <input
-        type="text"
-        value={displayValue}
-        onChange={handleChange}
-        className="w-full pl-8 pr-4 py-2 border rounded-lg text-right"
-      />
+    <div className={className}>
+      {label && (
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}
+        </label>
+      )}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+          $
+        </span>
+        <input
+          type="text"
+          value={displayValue}
+          onChange={handleChange}
+          className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          inputMode="numeric"
+          required={required}
+        />
+      </div>
     </div>
   );
 };

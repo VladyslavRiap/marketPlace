@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import { useSnackbarContext } from "@/redux/context/SnackBarContext";
-import api from "@/utils/api";
 import { useAppDispatch } from "@/redux/hooks";
-import { addReview, updateReview } from "@/redux/slices/reviewSlice";
+import {
+  addReview,
+  fetchReviews,
+  updateReview,
+} from "@/redux/slices/reviewSlice";
+import Button from "@/components/Button";
+import { motion } from "framer-motion";
 
 interface ReviewModalProps {
   productId: number;
@@ -24,8 +29,10 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
 }) => {
   const [rating, setRating] = useState(review?.rating || 0);
   const [comment, setComment] = useState(review?.comment || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showMessage } = useSnackbarContext();
   const dispatch = useAppDispatch();
+
   useEffect(() => {
     if (review) {
       setRating(review.rating);
@@ -35,9 +42,11 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (rating === 0) {
-      showMessage("Пожалуйста, поставьте оценку", "error");
+      showMessage("Please provide a rating", "error");
+      setIsSubmitting(false);
       return;
     }
 
@@ -46,75 +55,108 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
         await dispatch(
           updateReview({ reviewId: review.id, rating, comment })
         ).unwrap();
-        showMessage("Отзыв успешно изменен", "success");
+        showMessage("Review successfully updated", "success");
         onSuccess();
       } else {
         await dispatch(addReview({ productId, rating, comment })).unwrap();
-        showMessage("Отзыв успешно добавлен", "success");
+        showMessage("Review successfully submitted", "success");
+        dispatch(fetchReviews(productId));
       }
+
       onClose();
     } catch (error: any) {
       showMessage(
-        `Ошибка при ${review ? "изменении" : "добавлении"} отзыва: ${
+        `Error while ${review ? "updating" : "submitting"} review: ${
           error.message
         }`,
         "error"
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">
-        {review ? "Редактировать отзыв" : "Добавить отзыв"}
-      </h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Оценка</label>
-          <div className="flex space-x-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
+    <motion.div
+      className="fixed inset-0 flex items-center justify-center p-4 z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      <motion.div
+        className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto relative"
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+      >
+        <div className="p-6">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+            {review ? "Edit Review" : "Your Review"}
+          </h2>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rating
+              </label>
+              <div className="flex justify-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    type="button"
+                    key={star}
+                    onClick={() => setRating(star)}
+                    className={`p-2 transition-all ${
+                      rating >= star
+                        ? "text-yellow-500 scale-110"
+                        : "text-gray-300 hover:text-yellow-400"
+                    }`}
+                  >
+                    <Star className="w-6 h-6 md:w-7 md:h-7" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Comment
+              </label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                rows={4}
+                placeholder="Share your thoughts about the product..."
+                required
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-end">
+              <Button
                 type="button"
-                key={star}
-                onClick={() => setRating(star)}
-                className={`p-2 rounded-full ${
-                  rating >= star ? "text-yellow-500" : "text-gray-300"
-                } hover:text-yellow-500 transition`}
+                variant="secondary"
+                onClick={onClose}
+                className="w-full sm:w-auto"
               >
-                <Star className="w-6 h-6" />
-              </button>
-            ))}
-          </div>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto"
+              >
+                {isSubmitting ? "Submitting..." : review ? "Save" : "Submit"}
+              </Button>
+            </div>
+          </form>
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">
-            Комментарий
-          </label>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            rows={4}
-            placeholder="Напишите ваш отзыв..."
-          />
-        </div>
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-          >
-            Отмена
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            {review ? "Изменить отзыв" : "Добавить отзыв"}
-          </button>
-        </div>
-      </form>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

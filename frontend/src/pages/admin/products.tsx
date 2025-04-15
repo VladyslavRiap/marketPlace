@@ -2,15 +2,7 @@ import { GetServerSideProps } from "next";
 import AdminLayout from "@/components/ui/layout/AdminLayout";
 import ProductTable from "@/components/ui/tables/ProductTable";
 import api from "@/utils/api";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  description: string;
-  images: string;
-}
+import { Product } from "../../../types/product";
 
 interface ProductsPageProps {
   products: Product[];
@@ -26,12 +18,12 @@ const ProductsPage: React.FC<ProductsPageProps> = ({
   return (
     <AdminLayout>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Управление продуктами
+        Product Management
       </h1>
       <ProductTable products={products} />
       <div className="mt-6 flex justify-center">
         <span>
-          Страница {currentPage} из {totalPages}
+          Page {currentPage} of {totalPages}
         </span>
       </div>
     </AdminLayout>

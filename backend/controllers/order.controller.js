@@ -1,37 +1,43 @@
-const pool = require("../config/db");
-const OrderQueries = require("../queries/order.queries");
-const NotificationController = require("../controllers/notification.controller");
-const moment = require("moment");
+const OrderService = require("../services/order.service");
+const NotificationController = require("./notification.controller");
+const ERROR_MESSAGES = require("../constants/messageErrors");
 
 class OrderController {
-  static async createOrder(req, res) {
+  static async createOrder(req, res, next) {
     try {
       const userId = req.user.userId;
-      const { deliveryAddress } = req.body;
-      const cartItems = await pool.query(OrderQueries.GET_CART, [userId]);
+      const { deliveryAddress, phone, firstName, lastName, city, region } =
+        req.body;
 
-      if (!cartItems.rows.length) {
-        return res.status(400).json({ message: "Корзина пуста" });
+      if (!phone || !firstName || !lastName || !city || !region) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.ORDER_REQUIRED_FIELDS,
+        });
       }
 
-      const estimatedDeliveryDate = moment().add(5, "days").toISOString();
+      const cartItems = await OrderService.getCart(userId);
+      if (!cartItems.length) {
+        return res.status(400).json({ error: ERROR_MESSAGES.CART_EMPTY });
+      }
 
-      const orderResult = await pool.query(OrderQueries.createOrder, [
+      const order = await OrderService.createOrder(
         userId,
         deliveryAddress,
-        estimatedDeliveryDate,
-        "registered",
-      ]);
-      const order = orderResult.rows[0];
+        phone,
+        firstName,
+        lastName,
+        city,
+        region
+      );
 
-      for (const item of cartItems.rows) {
-        await pool.query(OrderQueries.createOrderItem, [
+      for (const item of cartItems) {
+        await OrderService.createOrderItem(
           order.id,
           item.product_id,
           item.seller_id,
           item.quantity,
-          item.price,
-        ]);
+          item.price
+        );
 
         await NotificationController.createNotification({
           userId: item.seller_id,
@@ -39,7 +45,7 @@ class OrderController {
         });
       }
 
-      await pool.query(OrderQueries.clearCart, [userId]);
+      await OrderService.clearCart(userId);
 
       await NotificationController.createNotification({
         userId,
@@ -48,146 +54,91 @@ class OrderController {
 
       res.status(201).json(order);
     } catch (error) {
-      console.error("Ошибка при создании заказа:", error);
-      res.status(500).json({ message: "Ошибка создания заказа", error });
+      next(error);
     }
   }
 
-  static async updateOrderStatus(req, res) {
+  static async updateOrderStatus(req, res, next) {
     try {
       const { orderId, productId, status, cancelReason } = req.body;
       const userId = req.user.userId;
       const userRole = req.user.role;
 
-      const orderItemResult = await pool.query(
-        `SELECT oi.status, p.user_id AS seller_id 
-         FROM order_items oi
-         JOIN products p ON oi.product_id = p.id
-         WHERE oi.order_id = $1 AND oi.product_id = $2`,
-        [orderId, productId]
+      const orderItem = await OrderService.getOrderItem(orderId, productId);
+      if (!orderItem) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.ORDER_ITEM_NOT_FOUND });
+      }
+
+      const updatedItem = await OrderService.updateOrderItemStatus(
+        orderId,
+        productId,
+        status,
+        cancelReason
       );
 
-      if (!orderItemResult.rows.length) {
-        return res.status(404).json({ message: "Товар в заказе не найден" });
-      }
-
-      const currentStatus = orderItemResult.rows[0].status;
-      const sellerId = orderItemResult.rows[0].seller_id;
-
-      const cancelStatuses = {
-        seller: "cancelled_by_seller",
-        buyer: "cancelled_by_buyer",
-      };
-
-      const updateFields = ["status = $1"];
-      const updateValues = [status];
-
-      if (cancelReason) {
-        updateFields.push("cancel_reason = $2");
-        updateValues.push(cancelReason);
-      }
-
-      const query = `
-        UPDATE order_items 
-        SET ${updateFields.join(", ")}
-        WHERE order_id = ${cancelReason ? "$3" : "$2"} 
-          AND product_id = ${cancelReason ? "$4" : "$3"}
-        RETURNING *
-      `;
-
-      const queryParams = cancelReason
-        ? [...updateValues, orderId, productId]
-        : [...updateValues, orderId, productId];
-
-      const updatedResult = await pool.query(query, queryParams);
-
-      await pool.query(`UPDATE orders SET updated_at = NOW() WHERE id = $1`, [
-        orderId,
-      ]);
+      await OrderService.updateOrderTimestamp(orderId);
 
       const notificationMessage = status.includes("cancelled")
         ? `Заказ №${orderId} отменен (${
-            status === cancelStatuses.seller ? "продавцом" : "покупателем"
+            status === "cancelled_by_seller" ? "продавцом" : "покупателем"
           })`
         : `Статус товара в заказе №${orderId} изменен на: ${status}`;
 
       await NotificationController.createNotification({
         userId: status.includes("cancelled")
-          ? status === cancelStatuses.seller
-            ? updatedResult.rows[0].user_id
-            : sellerId
-          : updatedResult.rows[0].user_id,
+          ? status === "cancelled_by_seller"
+            ? userId
+            : orderItem.seller_id
+          : userId,
         message: notificationMessage,
       });
 
       res.json({
         success: true,
-        message: "Статус заказа успешно обновлен",
-        updatedItem: updatedResult.rows[0],
+        message: ERROR_MESSAGES.ORDER_STATUS_UPDATED,
+        updatedItem,
       });
     } catch (error) {
-      console.error("Ошибка обновления статуса заказа:", error);
-      res.status(500).json({
-        message: "Ошибка обновления статуса заказа",
-        error: error.message,
-      });
+      next(error);
     }
   }
-  static async getOrder(req, res) {
+
+  static async getOrder(req, res, next) {
     try {
       const userId = req.user.userId;
       const orderId = req.params.id;
 
-      const orderResult = await pool.query(OrderQueries.getOrderByIdAndUser, [
-        orderId,
-        userId,
-      ]);
-
-      if (!orderResult.rows.length) {
-        return res.status(404).json({ message: "Заказ не найден" });
+      const order = await OrderService.getOrderByIdAndUser(orderId, userId);
+      if (!order) {
+        return res.status(404).json({ error: ERROR_MESSAGES.ORDER_NOT_FOUND });
       }
 
-      const order = orderResult.rows[0];
-
-      const orderItemsResult = await pool.query(OrderQueries.getOrderItems, [
-        orderId,
-      ]);
-
-      const orderItems = orderItemsResult.rows;
-
+      const orderItems = await OrderService.getOrderItems(orderId);
       res.json({ order, items: orderItems });
     } catch (error) {
-      console.error("Ошибка при получении заказа:", error);
-      res.status(500).json({ message: "Ошибка при получении заказа", error });
-    }
-  }
-  static async getOrdersByBuyer(req, res) {
-    try {
-      const userId = req.user.userId;
-
-      const ordersResult = await pool.query(OrderQueries.GET_ORDERS_BY_BUYER, [
-        userId,
-      ]);
-      console.log("User ID (Buyer):", userId);
-      res.json(ordersResult.rows);
-    } catch (error) {
-      console.error("Ошибка при получении заказов покупателя:", error);
-      res.status(500).json({ message: "Ошибка при получении заказов", error });
+      next(error);
     }
   }
 
-  static async getOrdersBySeller(req, res) {
+  static async getOrdersByBuyer(req, res, next) {
     try {
       const userId = req.user.userId;
-
-      const ordersResult = await pool.query(OrderQueries.GET_ORDERS_BY_SELLER, [
-        userId,
-      ]);
-
-      res.json(ordersResult.rows);
+      const orders = await OrderService.getOrdersByBuyer(userId);
+      res.json(orders);
     } catch (error) {
-      console.error("Ошибка при получении заказов продавца:", error);
-      res.status(500).json({ message: "Ошибка при получении заказов", error });
+      next(error);
+    }
+  }
+
+  static async getOrdersBySeller(req, res, next) {
+    try {
+      const userId = req.user.userId;
+      const orders = await OrderService.getOrdersBySeller(userId);
+      res.json(orders);
+    } catch (error) {
+      next(error);
     }
   }
 }

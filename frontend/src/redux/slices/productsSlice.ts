@@ -1,24 +1,11 @@
 import { createAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../utils/api";
+import { Product } from "../../../types/product";
 
 export interface ProductAttribute {
   attribute_id: number;
   attribute_name: string;
   attribute_value: string;
-}
-
-export interface Product {
-  id: number;
-  name: string;
-  price: number;
-  description: string;
-  image_url: string;
-  user_id: number;
-  category: string;
-  subcategory: string;
-  attributes: ProductAttribute[];
-  rating: string;
-  images: string[];
 }
 
 interface ProductsState {
@@ -54,9 +41,7 @@ export const fetchProducts = createAsyncThunk(
       const { data } = await api.get("/products", { params });
       return data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data || "Ошибка при загрузке товаров"
-      );
+      return rejectWithValue(error.response?.data || "Error loading products");
     }
   }
 );
@@ -80,7 +65,7 @@ export const fetchSellerProducts = createAsyncThunk(
       return data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data || "Ошибка при получении товаров продавца"
+        error.response?.data || "Error getting seller's products"
       );
     }
   }
@@ -93,9 +78,7 @@ export const addProduct = createAsyncThunk(
       const { data } = await api.post("/products", product);
       return data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data || "Ошибка при добавлении товара"
-      );
+      return rejectWithValue(error.response?.data || "Error adding product");
     }
   }
 );
@@ -112,9 +95,7 @@ export const updateProduct = createAsyncThunk(
       });
       return data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data || "Ошибка при обновлении товара"
-      );
+      return rejectWithValue(error.response?.data || "Error updating product");
     }
   }
 );
@@ -126,9 +107,7 @@ export const deleteProduct = createAsyncThunk(
       await api.delete(`/products/${id}`);
       return id;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data || "Ошибка при удалении товара"
-      );
+      return rejectWithValue(error.response?.data || "Error deleting product");
     }
   }
 );
@@ -142,7 +121,7 @@ export const fetchAttributes = createAsyncThunk(
       return data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data || "Ошибка при загрузке атрибутов"
+        error.response?.data || "Error loading attributes"
       );
     }
   }
@@ -157,9 +136,7 @@ export const addProductAttributes = createAsyncThunk(
       await api.post(`/products/${productId}/attributes`, { attributes });
       return { productId, attributes };
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data || "Ошибка при добавлении атрибутов"
-      );
+      return rejectWithValue(error.response?.data || "Error adding attributes");
     }
   }
 );
@@ -171,7 +148,7 @@ export const fetchProductForEdit = createAsyncThunk(
       return data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data || "Ошибка при загрузке товара для редактирования"
+        error.response?.data || "Error loading product for editing"
       );
     }
   }
@@ -179,7 +156,11 @@ export const fetchProductForEdit = createAsyncThunk(
 const productsSlice = createSlice({
   name: "products",
   initialState,
-  reducers: {},
+  reducers: {
+    resetAttributes: (state) => {
+      state.attributes = [];
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchProducts.pending, (state) => {
@@ -289,5 +270,5 @@ const productsSlice = createSlice({
       });
   },
 });
-
+export const { resetAttributes } = productsSlice.actions;
 export default productsSlice.reducer;

@@ -1,5 +1,6 @@
 import { Slider } from "@mui/material";
-import { FaStar, FaSync } from "react-icons/fa";
+import { FaStar } from "react-icons/fa";
+import PriceInput from "./PriceInput";
 import SortSelect from "./SortSelect";
 
 interface FiltersProps {
@@ -13,9 +14,10 @@ interface FiltersProps {
   setRating: (value: number | null) => void;
   categories: string[];
   subcategories: string[];
+  className?: string;
 }
 
-const Filters: React.FC<FiltersProps> = ({
+const Filters = ({
   category,
   setCategory,
   subcategory,
@@ -26,87 +28,94 @@ const Filters: React.FC<FiltersProps> = ({
   setRating,
   categories,
   subcategories,
-}) => {
-  const resetCategory = () => setCategory("");
-  const resetSubcategory = () => setSubcategory("");
-  const resetPriceRange = () => setPriceRange([0, 10000]);
-  const resetRating = () => setRating(null);
-
+  className = "",
+}: FiltersProps) => {
   return (
-    <div className="flex  gap-6 bg-white rounded-xl">
-      <div className="flex items-center gap-2">
-        <SortSelect
-          value={category}
-          onChange={(value) => {
-            setCategory(value);
-            setSubcategory("");
-          }}
-          options={categories.map((cat) => ({ value: cat, label: cat }))}
-          placeholder="All Categories"
-        />
-        <button
-          onClick={resetCategory}
-          className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
-        >
-          <FaSync className="hover:text-blue-500" />
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <SortSelect
-          value={subcategory}
-          onChange={setSubcategory}
-          options={subcategories.map((sub) => ({ value: sub, label: sub }))}
-          placeholder="All Subcategories"
-        />
-        <button
-          onClick={resetSubcategory}
-          className="p-2  rounded-full hover:bg-gray-400 hover:text-blue-500"
-        >
-          <FaSync />
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <div className="flex flex-col items-center">
-          <span className=" font-medium text-gray-700">Price Range</span>
-          <Slider
-            value={priceRange}
-            onChange={(_, newValue) => setPriceRange(newValue as number[])}
-            valueLabelDisplay="auto"
-            min={0}
-            max={10000}
-            sx={{ width: 250 }}
+    <div className={`space-y-6 ${className}`}>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Category
+          </label>
+          <SortSelect
+            value={category}
+            onChange={setCategory}
+            options={[
+              { value: "", label: "All categories" },
+              ...categories.map((cat) => ({ value: cat, label: cat })),
+            ]}
           />
         </div>
-        <button
-          onClick={resetPriceRange}
-          className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
-        >
-          <FaSync className="hover:text-blue-500" />
-        </button>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Subcategory
+          </label>
+          <SortSelect
+            value={subcategory}
+            onChange={setSubcategory}
+            options={[
+              { value: "", label: "All subcategories" },
+              ...subcategories.map((sub) => ({ value: sub, label: sub })),
+            ]}
+            disabled={!category}
+          />
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1">
+      <div className="pt-4 border-t border-gray-200">
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Price range
+        </label>
+        <Slider
+          value={priceRange}
+          onChange={(_, newValue) => setPriceRange(newValue as number[])}
+          valueLabelDisplay="auto"
+          min={0}
+          max={10000}
+          sx={{
+            color: "#6366f1",
+            "& .MuiSlider-valueLabel": {
+              backgroundColor: "#6366f1",
+            },
+          }}
+        />
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <PriceInput
+            label="From"
+            value={priceRange[0]}
+            onChange={(val) => setPriceRange([val, priceRange[1]])}
+          />
+          <PriceInput
+            label="To"
+            value={priceRange[1]}
+            onChange={(val) => setPriceRange([priceRange[0], val])}
+          />
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-gray-200">
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Rating
+        </label>
+        <div className="flex space-x-1">
           {[1, 2, 3, 4, 5].map((star) => (
-            <FaStar
+            <button
               key={star}
-              className={`cursor-pointer text-2xl transition duration-200 ease-in-out ${
-                star <= (rating || 0)
-                  ? "text-yellow-500"
-                  : "text-gray-300 hover:text-yellow-400"
-              }`}
               onClick={() => setRating(rating === star ? null : star)}
-            />
+              className="focus:outline-none"
+              aria-label={`Rating ${star}`}
+            >
+              <FaStar
+                className={`text-xl ${
+                  star <= (rating || 0)
+                    ? "text-yellow-500"
+                    : "text-gray-300 lg:hover:text-yellow-400"
+                }`}
+              />
+            </button>
           ))}
         </div>
-        <button
-          onClick={resetRating}
-          className="p-2 rounded-full hover:bg-gray-400 hover:text-blue-500"
-        >
-          <FaSync className="hover:text-blue-500" />
-        </button>
       </div>
     </div>
   );

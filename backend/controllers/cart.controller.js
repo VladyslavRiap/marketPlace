@@ -1,48 +1,40 @@
-const pool = require("../config/db");
-const queries = require("../queries/cart.queries");
+const CartService = require("../services/cart.service");
+const ERROR_MESSAGES = require("../constants/messageErrors");
+
 class CartController {
-  static async addToCart(req, res) {
+  static async addToCart(req, res, next) {
     const { userId } = req.user;
     const { productId, quantity = 1 } = req.body;
 
     try {
-      const result = await pool.query(queries.ADD_TO_CART, [
-        userId,
-        productId,
-        quantity,
-      ]);
-
-      res.json(result.rows[0]);
+      const cartItem = await CartService.addToCart(userId, productId, quantity);
+      res.json(cartItem);
     } catch (error) {
-      console.error("Error adding to cart:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async removeFromCart(req, res) {
+  static async removeFromCart(req, res, next) {
     const { userId } = req.user;
     const productId = parseInt(req.params.id, 10);
 
-    if (isNaN(productId)) {
-      return res.status(400).json({ error: "Некорректный ID товара" });
-    }
-
     try {
-      await pool.query(queries.DELETE_FROM_CART, [userId, productId]);
-      res.json({ message: "Товар удален из корзины" });
+      if (isNaN(productId)) {
+        return res.status(400).json({ error: ERROR_MESSAGES.VALIDATION_ERROR });
+      }
+
+      await CartService.removeFromCart(userId, productId);
+      res.json({ message: ERROR_MESSAGES.CART_ITEM_DELETED });
     } catch (error) {
-      console.error("Ошибка удаления товара из корзины:", error.message);
-      res.status(500).json({ error: "Ошибка сервера" });
+      next(error);
     }
   }
 
-  static async getCart(req, res) {
+  static async getCart(req, res, next) {
     const { userId } = req.user;
 
     try {
-      const result = await pool.query(queries.GET_CART, [userId]);
-
-      const cartItems = result.rows;
+      const cartItems = await CartService.getCart(userId);
       const totalAmount = cartItems.reduce(
         (sum, item) => sum + parseFloat(item.total_price),
         0
@@ -50,60 +42,55 @@ class CartController {
 
       res.json({ items: cartItems, totalAmount });
     } catch (error) {
-      console.error("Error fetching cart:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async updateQuantityInCart(req, res) {
+  static async updateQuantityInCart(req, res, next) {
     const { userId } = req.user;
     const { productId, quantityChange } = req.body;
 
-    if (![1, -1].includes(quantityChange)) {
-      return res.status(400).json({ error: "quantityChange must be +1 or -1" });
-    }
-
     try {
-      const cartItemResult = await pool.query(queries.FIND_CART, [
-        userId,
-        productId,
-      ]);
+      if (![1, -1].includes(quantityChange)) {
+        return res.status(400).json({ error: ERROR_MESSAGES.VALIDATION_ERROR });
+      }
 
-      const cartItem = cartItemResult.rows[0];
+      const cartItem = await CartService.findCartItem(userId, productId);
 
       if (!cartItem) {
-        return res.status(404).json({ error: "Item not found in cart" });
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.CART_ITEM_NOT_FOUND });
       }
 
       if (quantityChange === -1 && cartItem.quantity <= 1) {
-        return res
-          .status(400)
-          .json({ error: "Item quantity cannot be less than 1" });
+        return res.status(400).json({
+          error: ERROR_MESSAGES.CART_MIN_QUANTITY,
+        });
       }
 
-      const updatedCartItem = await pool.query(queries.UPDATE_QUANTITY, [
-        quantityChange,
+      const updatedCartItem = await CartService.updateQuantity(
         userId,
         productId,
-      ]);
+        quantityChange
+      );
 
-      res.json(updatedCartItem.rows[0]);
+      res.json(updatedCartItem);
     } catch (error) {
-      console.error("Error updating item quantity in cart:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async clearCart(req, res) {
+  static async clearCart(req, res, next) {
     const { userId } = req.user;
 
     try {
-      await pool.query(queries.DELETE_FULL_CART, [userId]);
-      res.json({ message: "Cart cleared successfully" });
+      await CartService.clearCart(userId);
+      res.json({ message: ERROR_MESSAGES.CART_CLEARED });
     } catch (error) {
-      console.error("Error clearing cart:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 }
+
 module.exports = CartController;

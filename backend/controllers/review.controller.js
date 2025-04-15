@@ -1,120 +1,105 @@
-const pool = require("../config/db");
-const queries = require("../queries/review.queries");
+const ReviewService = require("../services/review.service");
+const ERROR_MESSAGES = require("../constants/messageErrors");
+
 class ReviewController {
-  static async addReview(req, res) {
+  static async addReview(req, res, next) {
     const { userId } = req.user;
     const { productId, rating, comment } = req.body;
 
-    if (!productId || rating === undefined || rating < 0 || rating > 5) {
-      return res.status(400).json({ error: "Rating must be between 0 and 5" });
-    }
-
     try {
-      const productExists = await pool.query(queries.GET_REVIEW_ID, [
-        productId,
-      ]);
-
-      if (productExists.rows.length === 0) {
-        return res.status(400).json({ error: "Product not found" });
+      if (!productId || rating === undefined || rating < 0 || rating > 5) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.INVALID_RATING,
+        });
       }
 
-      await pool.query(queries.INSERT_REVIEW, [
-        userId,
-        productId,
-        rating,
-        comment,
-      ]);
+      const productExists = await ReviewService.checkProductExists(productId);
+      if (!productExists) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.PRODUCT_NOT_FOUND,
+        });
+      }
 
-      await pool.query(queries.UPDATE_PRODUCT_RATING, [productId]);
-
-      res.status(201).json({ message: "Review added and rating updated" });
+      await ReviewService.addReview(userId, productId, rating, comment);
+      res.status(201).json({
+        message: ERROR_MESSAGES.REVIEW_ADDED,
+      });
     } catch (error) {
-      console.error("Error adding review:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async getProductReviews(req, res) {
+  static async getProductReviews(req, res, next) {
     const { id: productId } = req.params;
 
     try {
-      const result = await pool.query(queries.GET_REVIEWS_BY_PRODUCT, [
-        productId,
-      ]);
-
-      res.json(result.rows);
+      const reviews = await ReviewService.getProductReviews(productId);
+      res.json(reviews);
     } catch (error) {
-      console.error("Error fetching reviews:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async updateReview(req, res) {
-    const { userId, role } = req.user;
+  static async updateReview(req, res, next) {
+    const { userId } = req.user;
     const { id: reviewId } = req.params;
     const { rating, comment } = req.body;
 
-    if (!rating && !comment) {
-      return res.status(400).json({ error: "Nothing to update" });
-    }
-
     try {
-      const reviewResult = await pool.query(queries.GET_REVIEW_BY_ID, [
+      if (!rating && !comment) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.NOTHING_TO_UPDATE,
+        });
+      }
+
+      const review = await ReviewService.getReviewById(reviewId);
+      if (!review) {
+        return res.status(404).json({
+          error: ERROR_MESSAGES.REVIEW_NOT_FOUND,
+        });
+      }
+
+      if (review.user_id !== userId) {
+        return res.status(403).json({
+          error: ERROR_MESSAGES.UNAUTHORIZED_REVIEW_UPDATE,
+        });
+      }
+
+      const updatedReview = await ReviewService.updateReview(
         reviewId,
-      ]);
-
-      if (reviewResult.rows.length === 0) {
-        return res.status(404).json({ error: "Review not found" });
-      }
-
-      const reviewUserId = reviewResult.rows[0].user_id;
-
-      if (reviewUserId !== userId) {
-        return res
-          .status(403)
-          .json({ error: "You are not authorized to update this review" });
-      }
-
-      const result = await pool.query(queries.UPDATE_REVIEW, [
         rating,
-        comment,
-        reviewId,
-      ]);
-
-      res.json(result.rows[0]);
+        comment
+      );
+      res.json(updatedReview);
     } catch (error) {
-      console.error("Error updating review:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async deleteReview(req, res) {
-    const { userId, role } = req.user;
+  static async deleteReview(req, res, next) {
+    const { userId } = req.user;
     const { id: reviewId } = req.params;
 
     try {
-      const reviewResult = await pool.query(queries.GET_REVIEW_BY_ID, [
-        reviewId,
-      ]);
-
-      if (reviewResult.rows.length === 0) {
-        return res.status(404).json({ error: "Review not found" });
+      const review = await ReviewService.getReviewById(reviewId);
+      if (!review) {
+        return res.status(404).json({
+          error: ERROR_MESSAGES.REVIEW_NOT_FOUND,
+        });
       }
 
-      const reviewUserId = reviewResult.rows[0].user_id;
-
-      if (reviewUserId !== userId) {
-        return res
-          .status(403)
-          .json({ error: "You are not authorized to delete this review" });
+      if (review.user_id !== userId) {
+        return res.status(403).json({
+          error: ERROR_MESSAGES.UNAUTHORIZED_REVIEW_DELETE,
+        });
       }
 
-      await pool.query(queries.DELETE_REVIEW, [reviewId]);
-
-      res.json({ message: "Review deleted successfully" });
+      await ReviewService.deleteReview(reviewId);
+      res.json({
+        message: ERROR_MESSAGES.REVIEW_DELETED,
+      });
     } catch (error) {
-      console.error("Error deleting review:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 }

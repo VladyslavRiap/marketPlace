@@ -8,48 +8,30 @@ import {
 } from "@/redux/slices/cartSlice";
 import api from "@/utils/api";
 import { motion } from "framer-motion";
-import { Trash2, Plus, Minus } from "lucide-react";
+import {
+  Trash2,
+  ShoppingCart,
+  ArrowLeft,
+  Home,
+  ChevronRight,
+} from "lucide-react";
 import { useSnackbarContext } from "@/redux/context/SnackBarContext";
 import Link from "next/link";
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
-import { CHECKOUT_MODAL_ID, useModal } from "@/redux/context/ModalContext";
+import { CLEAR_CART_MODAL, useModal } from "@/redux/context/ModalContext";
+import Button from "@/components/Button";
 
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  total_price: number;
-  images: string[];
-}
-
-interface CartPageProps {
-  initialCart: {
-    items: CartItem[];
-    totalAmount: number;
-  };
-}
+import CartEmpty from "@/components/ui/cart/CartEmpty";
+import CartItem from "@/components/ui/cart/CartItem";
+import CartTotal from "@/components/ui/cart/CartTotal";
+import { CartPageProps } from "../../types/cart";
 
 const CartPage = ({ initialCart }: CartPageProps) => {
   const dispatch = useAppDispatch();
   const { showMessage } = useSnackbarContext();
   const [localCart, setLocalCart] = useState(initialCart.items);
   const [totalAmount, setTotalAmount] = useState(initialCart.totalAmount);
-  const [isClearCartOpen, setIsClearCartOpen] = useState(false);
-  const { openModal, closeModal } = useModal();
+  const { openModal } = useModal();
 
-  const handleCheckout = async (deliveryAddress: string) => {
-    try {
-      await api.post("/orders", { deliveryAddress });
-      showMessage("Заказ успешно создан!", "success");
-      dispatch(clearCart());
-      setLocalCart([]);
-      setTotalAmount(0);
-    } catch (error: any) {
-      showMessage("Ошибка при создании заказа: " + error.message, "error");
-    }
-  };
   const handleRemove = async (productId: number) => {
     try {
       await dispatch(removeFromCart(productId)).unwrap();
@@ -61,9 +43,9 @@ const CartPage = ({ initialCart }: CartPageProps) => {
           0
         )
       );
-      showMessage("Товар удален из корзины", "success");
+      showMessage("Item removed from cart", "success");
     } catch (error: any) {
-      showMessage("Ошибка: " + error.message, "error");
+      showMessage("Error: " + error.message, "error");
     }
   };
 
@@ -83,7 +65,6 @@ const CartPage = ({ initialCart }: CartPageProps) => {
       );
 
       const itemToUpdate = updatedCart.find((item) => item.id === productId);
-
       if (itemToUpdate && itemToUpdate.quantity === 0) {
         await handleRemove(productId);
         return;
@@ -96,13 +77,12 @@ const CartPage = ({ initialCart }: CartPageProps) => {
           0
         )
       );
-
       await dispatch(
         updateCartQuantity({ productId, quantityChange: change })
       ).unwrap();
-      showMessage("Количество обновлено", "info");
+      showMessage("Quantity updated", "info");
     } catch (error: any) {
-      showMessage("Ошибка: " + error.message, "error");
+      showMessage("Error: " + error.message, "error");
     }
   };
 
@@ -111,199 +91,108 @@ const CartPage = ({ initialCart }: CartPageProps) => {
       await dispatch(clearCart()).unwrap();
       setLocalCart([]);
       setTotalAmount(0);
-      showMessage("Корзина очищена", "success");
-      setIsClearCartOpen(false);
+      showMessage("Cart cleared", "success");
     } catch (error: any) {
-      showMessage("Ошибка: " + error.message, "error");
+      showMessage("Error: " + error.message, "error");
     }
   };
 
   return (
-    <motion.div className="w-full p-8 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-8">
-          Корзина
-        </h1>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="bg-white py-4 border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center text-sm text-gray-600">
+            <Link href="/" className="flex items-center hover:text-[#E07575]">
+              <Home className="w-4 h-4 mr-1" />
+              Home
+            </Link>
+            <ChevronRight className="w-4 h-4 mx-2" />
+            <Link href="/profile" className="hover:text-[#E07575]">
+              My Account
+            </Link>
+            <ChevronRight className="w-4 h-4 mx-2" />
 
-        {localCart.length === 0 ? (
-          <div className="flex justify-center items-center">
-            <p className="text-gray-600 text-xl">Ваша корзина пуста</p>
+            <span className="text-[#E07575]">Cart</span>
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-6 bg-white rounded-lg shadow-xl mb-6">
-              <p className="md:col-span-2 text-lg font-semibold text-gray-800">
-                Товар
-              </p>
-              <p className="text-center text-lg font-semibold text-gray-800">
-                Количество
-              </p>
-              <p className="text-center text-lg font-semibold text-gray-800">
-                Цена
-              </p>
-              <p className="text-center text-lg font-semibold text-gray-800">
-                Удалить
-              </p>
-            </div>
-            <div className="space-y-6">
-              {localCart.map((item) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="grid grid-cols-1 md:grid-cols-5 items-center p-6 bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 ease-in-out"
-                >
-                  <Link
-                    href={`/products/${item.id}`}
-                    className="flex items-center space-x-6 md:col-span-2"
-                  >
-                    <img
-                      src={
-                        item.images && item.images.length > 0
-                          ? item.images[0]
-                          : "/placeholder.png"
-                      }
-                      alt={item.name}
-                      className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
-                    />
-                    <p className="text-xl font-medium text-gray-900">
-                      {item.name}
-                    </p>
-                  </Link>
-                  <div className="flex items-center justify-center space-x-4">
-                    <button
-                      onClick={() => handleUpdateQuantity(item.id, -1)}
-                      className="p-3 bg-gray-200 rounded-full hover:bg-gray-300 transition"
-                    >
-                      <Minus className="w-6 h-6" />
-                    </button>
-                    <span className="text-xl font-semibold text-gray-900">
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() => handleUpdateQuantity(item.id, 1)}
-                      className="p-3 bg-gray-200 rounded-full hover:bg-gray-300 transition"
-                    >
-                      <Plus className="w-6 h-6" />
-                    </button>
-                  </div>
-
-                  <p className="text-center text-xl font-bold text-gray-900">
-                    ${Number(item.total_price).toFixed(2)}
-                  </p>
-
-                  <div className="flex justify-center">
-                    <button
-                      onClick={() => handleRemove(item.id)}
-                      className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
-                    >
-                      <Trash2 className="w-7 h-7" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="mt-8 p-6 bg-white rounded-lg shadow-md flex flex-col items-center md:flex-row md:justify-between space-y-4 md:space-y-0 md:space-x-4">
-              <p className="text-3xl font-bold text-gray-900">
-                Итого:
-                <span className="text-red-600">
-                  ${isNaN(totalAmount) ? "0.00" : totalAmount.toFixed(2)}
-                </span>
-              </p>
-
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-                <button
-                  onClick={() => setIsClearCartOpen(true)}
-                  className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition text-lg"
-                >
-                  Очистить корзину
-                </button>
-                <button
-                  onClick={() =>
-                    openModal(CHECKOUT_MODAL_ID, {
-                      items: localCart,
-                      totalAmount,
-                      onCheckout: handleCheckout,
-                    })
-                  }
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition text-lg"
-                  disabled={localCart.length === 0}
-                >
-                  Оформить заказ
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+        </div>
       </div>
 
-      <Transition appear show={isClearCartOpen} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-10"
-          onClose={() => setIsClearCartOpen(false)}
-        >
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
-          </Transition.Child>
+      <div className="lg:hidden sticky top-0 z-10 bg-white shadow-sm p-4 flex items-center">
+        <Link href="/" className="mr-4">
+          <ArrowLeft className="w-6 h-6 text-gray-700" />
+        </Link>
+        <h1 className="text-xl font-bold text-gray-900">Cart</h1>
+      </div>
 
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
+      <div className="container mx-auto px-2 sm:px-4 py-4 max-w-7xl">
+        {localCart.length === 0 ? (
+          <CartEmpty />
+        ) : (
+          <div className="flex flex-col">
+            <div className="w-full mb-8">
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="hidden md:grid grid-cols-12 gap-4 p-6 bg-gray-50 border-b">
+                  <div className="col-span-5 font-medium text-gray-500">
+                    Product
+                  </div>
+                  <div className="col-span-2 font-medium text-gray-500 text-center">
+                    Price
+                  </div>
+                  <div className="col-span-2 font-medium text-gray-500 text-center">
+                    Quantity
+                  </div>
+                  <div className="col-span-3 font-medium text-gray-500 text-center">
+                    Total
+                  </div>
+                </div>
+
+                <div className="divide-y divide-gray-100">
+                  {localCart.map((item) => (
+                    <CartItem
+                      key={item.id}
+                      item={item}
+                      onRemove={handleRemove}
+                      onUpdateQuantity={handleUpdateQuantity}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full flex flex-col md:flex-row justify-between gap-4 mb-8">
+              <Button
+                href="/products"
+                variant="secondary"
+                size="lg"
+                icon={ArrowLeft}
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-lg font-medium leading-6 text-gray-900"
-                  >
-                    Очистить корзину
-                  </Dialog.Title>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">
-                      Вы уверены, что хотите очистить корзину?
-                    </p>
-                  </div>
+                Back to shop
+              </Button>
+              <Button
+                onClick={() =>
+                  openModal(CLEAR_CART_MODAL, {
+                    onConfirm: handleClearCart,
+                  })
+                }
+                variant="secondary"
+                size="lg"
+              >
+                Clear cart
+              </Button>
+            </div>
 
-                  <div className="mt-4 flex justify-end space-x-4">
-                    <button
-                      type="button"
-                      className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                      onClick={() => setIsClearCartOpen(false)}
-                    >
-                      Отмена
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-red-500 border border-transparent rounded-md hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
-                      onClick={handleClearCart}
-                    >
-                      Очистить
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
+            <div className="w-full flex justify-end">
+              <div className="w-full lg:w-1/3">
+                <CartTotal
+                  totalAmount={totalAmount}
+                  itemCount={localCart.length}
+                />
+              </div>
             </div>
           </div>
-        </Dialog>
-      </Transition>
-    </motion.div>
+        )}
+      </div>
+    </div>
   );
 };
 

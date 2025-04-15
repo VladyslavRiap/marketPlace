@@ -12,6 +12,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@headlessui/react": "^2.2.0",
+    "@hookform/resolvers": "^5.0.1",
     "@material/slider": "^14.0.0",
     "@mui/material": "^6.4.6",
     "@radix-ui/react-select": "^2.1.6",
@@ -28,13 +29,17 @@
     "notistack": "^3.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^14.3.8",
+    "react-hook-form": "^7.55.0",
     "react-icons": "^5.5.0",
     "react-loading-skeleton": "^3.5.0",
     "react-redux": "^9.2.0",
+    "react-responsive": "^10.0.1",
     "react-responsive-carousel": "^3.2.23",
     "redux": "^5.0.1",
     "redux-persist": "^6.0.0",
-    "tailwind-merge": "^3.0.2"
+    "tailwind-merge": "^3.0.2",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",

@@ -1,168 +1,61 @@
-const pool = require("../config/db");
-const queries = require("../queries/product.queries");
-
+const ProductService = require("../services/product.service");
 const uploadFile = require("../services/s3");
-
+const ERROR_MESSAGES = require("../constants/messageErrors");
+const queries = require("../queries/product.queries");
+const RecommendationService = require("../services/recommendation.service");
 class ProductController {
   static fabricGetMethod(baseQuery, hasFilters = false) {
-    return async (req, res) => {
-      const {
-        page = 1,
-        limit = 12,
-        category,
-        subcategory, // Добавлен новый параметр
-        minPrice,
-        maxPrice,
-        rating,
-        sortBy = "id",
-        order = "asc",
-      } = req.query;
-
-      const parsedPage = parseInt(page, 10);
-      const parsedLimit = parseInt(limit, 10);
-      const parsedRating = rating ? parseFloat(rating) : null;
-
-      if (
-        isNaN(parsedPage) ||
-        isNaN(parsedLimit) ||
-        parsedPage < 1 ||
-        parsedLimit < 1
-      ) {
-        return res.status(400).json({ error: "Invalid page or limit value" });
-      }
-
-      if (
-        rating &&
-        (isNaN(parsedRating) || parsedRating < 0 || parsedRating > 5)
-      ) {
-        return res
-          .status(400)
-          .json({ error: "Rating must be between 0 and 5" });
-      }
-
-      const offset = (parsedPage - 1) * parsedLimit;
-      let queryText = baseQuery;
-      let countQuery = `
-      SELECT COUNT(*) 
-      FROM products p
-      JOIN subcategories s ON p.subcategory_id = s.id
-      JOIN categories c ON s.category_id = c.id
-    `;
-
-      let values = [];
-      let valueIndex = 1;
-      let filters = [];
-
-      if (hasFilters) {
-        if (category) {
-          filters.push(`c.name = $${valueIndex++}`);
-          values.push(category);
-        }
-        if (subcategory) {
-          // Фильтрация по подкатегории
-          filters.push(`s.name = $${valueIndex++}`);
-          values.push(subcategory);
-        }
-        if (minPrice) {
-          filters.push(`p.price >= $${valueIndex++}`);
-          values.push(minPrice);
-        }
-        if (maxPrice) {
-          filters.push(`p.price <= $${valueIndex++}`);
-          values.push(maxPrice);
-        }
-        if (parsedRating !== null) {
-          filters.push(`p.rating >= $${valueIndex++}`);
-          values.push(parsedRating);
-        }
-
-        if (filters.length > 0) {
-          queryText += ` WHERE ` + filters.join(" AND ");
-          countQuery += ` WHERE ` + filters.join(" AND ");
-        }
-      }
-
-      const allowedSortFields = ["id", "name", "price", "rating"];
-      const allowedOrder = ["asc", "desc"];
-
-      const sortField = allowedSortFields.includes(sortBy) ? sortBy : "id";
-      const sortOrder = allowedOrder.includes(order.toLowerCase())
-        ? order.toUpperCase()
-        : "ASC";
-
-      queryText += ` ORDER BY ${sortField} ${sortOrder}`;
-      queryText += ` LIMIT $${valueIndex} OFFSET $${valueIndex + 1}`;
-      values.push(parsedLimit, offset);
-
+    return async (req, res, next) => {
       try {
-        const [productsResult, countResult] = await Promise.all([
-          pool.query(queryText, values),
-          pool.query(countQuery, values.slice(0, -2)),
-        ]);
-
-        const totalCount = parseInt(countResult.rows[0].count, 10);
-        const totalPages = Math.ceil(totalCount / parsedLimit);
-
-        res.json({
-          products: productsResult.rows,
-          totalPages,
-          currentPage: parsedPage,
-        });
+        const result = await ProductService.getProducts(
+          req.query,
+          baseQuery,
+          hasFilters
+        );
+        res.json(result);
       } catch (error) {
-        console.error("Error executing query:", error.message);
-        res.status(500).json({ error: "Server error" });
+        next(error);
       }
     };
   }
 
-  static async getProductById(req, res) {
-    const { id } = req.params;
-
+  static async getProductById(req, res, next) {
     try {
-      const productResult = await pool.query(queries.GET_PRODUCT_BY_ID, [id]);
+      const { id } = req.params;
+      await ProductService.incrementViewCount(id);
+      const product = await ProductService.getProductById(id);
 
-      if (productResult.rows.length === 0) {
-        return res.status(404).json({ error: "Product not found" });
+      if (!product) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.PRODUCT_NOT_FOUND });
       }
-
-      const imagesResult = await pool.query(
-        `SELECT image_url FROM product_images WHERE product_id = $1`,
-        [id]
-      );
-
-      const product = productResult.rows[0];
-      product.images = imagesResult.rows.map((row) => row.image_url);
 
       res.json(product);
     } catch (error) {
-      console.error("Cannot receive product", error.message);
-      res.status(500).json({ error: "Cannot receive product" });
+      next(error);
     }
   }
 
-  static async addProduct(req, res) {
+  static async addProduct(req, res, next) {
     try {
       const { name, price, description, subcategory_id } = req.body;
       const userId = req.user.userId;
 
       if (!name || !price || !subcategory_id) {
-        return res
-          .status(400)
-          .json({ error: "Name, price, and subcategory are required" });
+        return res.status(400).json({
+          error: ERROR_MESSAGES.PRODUCT_REQUIRED_FIELDS,
+        });
       }
 
-      const productResult = await pool.query(queries.INSERT_PRODUCT, [
+      const product = await ProductService.addProduct(
         name,
         price,
         description,
-        null,
-        userId,
         subcategory_id,
-      ]);
+        userId
+      );
 
-      const productId = productResult.rows[0].id;
-
-      let imageUrls = [];
       if (req.files && req.files.length > 0) {
         for (const file of req.files) {
           const imageUrl = await uploadFile(
@@ -170,339 +63,250 @@ class ProductController {
             file.originalname,
             file.buffer
           );
-          imageUrls.push(imageUrl);
-
-          await pool.query(
-            `INSERT INTO product_images (product_id, image_url) VALUES ($1, $2)`,
-            [productId, imageUrl]
-          );
+          await ProductService.addProductImage(product.id, imageUrl);
         }
       }
 
-      res.status(201).json({ id: productId, images: imageUrls });
+      res.status(201).json({ id: product.id });
     } catch (error) {
-      console.error("Error adding new product:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async addProductAttributes(req, res) {
-    const client = await pool.connect();
-
+  static async addProductAttributes(req, res, next) {
     try {
       const { productId } = req.params;
       const { attributes } = req.body;
 
-      console.log(productId, attributes);
-
       if (!productId || !attributes || attributes.length === 0) {
-        return res
-          .status(400)
-          .json({ error: "ProductId and attributes are required" });
+        return res.status(400).json({
+          error: ERROR_MESSAGES.PRODUCT_ATTRIBUTES_REQUIRED,
+        });
       }
 
-      await client.query("BEGIN");
-
-      const productCheck = await client.query(queries.CHECK_PRODUCT_EXISTENCE, [
-        productId,
-      ]);
-      if (productCheck.rows.length === 0) {
-        await client.query("ROLLBACK");
-        return res.status(404).json({ error: "Product not found" });
+      const productExists = await ProductService.checkProductExistence(
+        productId
+      );
+      if (!productExists) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.PRODUCT_NOT_FOUND });
       }
 
       for (const attr of attributes) {
-        const attributeCheck = await client.query(
-          queries.CHECK_ATTRIBUTE_EXISTENCE,
-          [attr.attribute_id]
+        const attributeExists = await ProductService.checkAttributeExistence(
+          attr.attribute_id
         );
-
-        if (attributeCheck.rows.length === 0 || attr.attribute_id === 0) {
-          await client.query("ROLLBACK");
+        if (!attributeExists) {
           return res.status(400).json({
-            error: `Attribute with ID ${attr.attribute_id} does not exist or is invalid.`,
+            error: ERROR_MESSAGES.ATTRIBUTE_NOT_FOUND(attr.attribute_id),
           });
         }
-
-        await client.query(queries.INSERT_PRODUCT_ATTRIBUTES, [
-          productId,
-          attr.attribute_id,
-          attr.value,
-        ]);
       }
 
-      await client.query("COMMIT");
-      res.status(200).json({ message: "Attributes added successfully" });
+      await ProductService.addProductAttributes(productId, attributes);
+      res.status(200).json({ message: ERROR_MESSAGES.ATTRIBUTES_ADDED });
     } catch (error) {
-      await client.query("ROLLBACK");
-      console.error("Error adding product attributes:", error.message);
-      res.status(500).json({ error: "Server error" });
-    } finally {
-      client.release();
+      next(error);
     }
   }
 
-  static async updateProduct(req, res) {
-    const { id } = req.params;
-    const { name, price, description, subcategory_id, attributes } = req.body;
-    const userId = req.user.userId;
-
-    if (!name || !price || !subcategory_id) {
-      return res
-        .status(400)
-        .json({ error: "Name, price, and subcategory are required" });
-    }
-
+  static async updateProduct(req, res, next) {
     try {
-      const productResult = await pool.query(queries.CHECK_PRODUCT_OWNER, [id]);
-      if (productResult.rows.length === 0) {
-        return res.status(404).json({ error: "Product not found" });
+      const { id } = req.params;
+      const { name, price, description, subcategory_id, attributes } = req.body;
+      const userId = req.user.userId;
+
+      if (!name || !price || !subcategory_id) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.PRODUCT_REQUIRED_FIELDS,
+        });
       }
 
-      const product = productResult.rows[0];
-      const productUserId = product.user_id;
-
-      if (productUserId !== userId && req.user.role !== "admin") {
+      const product = await ProductService.checkProductOwner(id);
+      if (!product) {
         return res
-          .status(403)
-          .json({ error: "You are not authorized to update this product" });
+          .status(404)
+          .json({ error: ERROR_MESSAGES.PRODUCT_NOT_FOUND });
+      }
+
+      if (product.user_id !== userId && req.user.role !== "admin") {
+        return res.status(403).json({
+          error: ERROR_MESSAGES.UNAUTHORIZED_PRODUCT_UPDATE,
+        });
       }
 
       const updatedFields = {
         name,
         price,
         description,
-        subcategory_id,
       };
 
-      const updateColumns = Object.keys(updatedFields)
-        .map((field, index) => `${field} = $${index + 1}`)
-        .join(", ");
-      const updateValues = Object.values(updatedFields);
-
-      const updateQuery = `
-        UPDATE products
-        SET ${updateColumns}
-        WHERE id = $${updateValues.length + 1}
-        RETURNING *;
-      `;
-      const result = await pool.query(updateQuery, [...updateValues, id]);
+      const updatedProduct = await ProductService.updateProduct(
+        id,
+        updatedFields
+      );
 
       if (req.files && req.files.length > 0) {
-        await pool.query(`DELETE FROM product_images WHERE product_id = $1`, [
-          id,
-        ]);
-
-        let imageUrls = [];
+        await ProductService.deleteProductImages(id);
         for (const file of req.files) {
           const imageUrl = await uploadFile(
             "marketplace-my-1-2-3-4",
             file.originalname,
             file.buffer
           );
-          imageUrls.push(imageUrl);
-
-          await pool.query(
-            `INSERT INTO product_images (product_id, image_url) VALUES ($1, $2)`,
-            [id, imageUrl]
-          );
+          await ProductService.addProductImage(id, imageUrl);
         }
       }
 
-      await pool.query(queries.DELETE_PRODUCT_ATTRIBUTES, [id]);
-
+      await ProductService.deleteProductAttributes(id);
       if (attributes && attributes.length > 0) {
-        for (const attr of attributes) {
-          await pool.query(queries.INSERT_PRODUCT_ATTRIBUTES, [
-            id,
-            attr.attribute_id,
-            attr.value,
-          ]);
-        }
+        await ProductService.addProductAttributes(id, attributes);
       }
 
-      res.json(result.rows[0]);
+      res.json(updatedProduct);
     } catch (error) {
-      console.error("Error updating product:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async deleteProduct(req, res) {
-    const { id } = req.params;
-    const userId = req.user.userId;
-
+  static async deleteProduct(req, res, next) {
     try {
-      const productResult = await pool.query(queries.CHECK_PRODUCT_OWNER, [id]);
-      if (productResult.rows.length === 0) {
-        return res.status(404).json({ error: "Product not found" });
-      }
+      const { id } = req.params;
+      const userId = req.user.userId;
 
-      const productUserId = productResult.rows[0].user_id;
-      if (productUserId !== userId && req.user.role !== "admin") {
+      const product = await ProductService.checkProductOwner(id);
+      if (!product) {
         return res
-          .status(403)
-          .json({ error: "You are not authorized to delete this product" });
+          .status(404)
+          .json({ error: ERROR_MESSAGES.PRODUCT_NOT_FOUND });
       }
 
-      await pool.query(queries.DELETE_PRODUCT_ATTRIBUTES, [id]);
-      await pool.query(queries.DELETE_PRODUCT, [id]);
-      res.json({ message: "Product successfully deleted" });
+      if (product.user_id !== userId && req.user.role !== "admin") {
+        return res.status(403).json({
+          error: ERROR_MESSAGES.UNAUTHORIZED_PRODUCT_DELETE,
+        });
+      }
+
+      await ProductService.deleteProductAttributes(id);
+      await ProductService.deleteProduct(id);
+      res.json({ message: ERROR_MESSAGES.PRODUCT_DELETED });
     } catch (error) {
-      console.error("Error deleting product:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async getSubcategoriesByCategoryId(req, res) {
-    const { categoryId } = req.params;
-
+  static async getSubcategoriesByCategoryId(req, res, next) {
     try {
-      const result = await pool.query(
-        queries.GET_SUBCATEGORIES_BY_CATEGORY_ID,
-        [categoryId]
+      const { categoryId } = req.params;
+      const subcategories = await ProductService.getSubcategoriesByCategoryId(
+        categoryId
       );
-      res.json(result.rows);
+      res.json(subcategories);
     } catch (error) {
-      console.error("Error fetching subcategories:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async getAttributesBySubcategoryId(req, res) {
-    const { subcategoryId } = req.params;
-
+  static async getAttributesBySubcategoryId(req, res, next) {
     try {
-      const result = await pool.query(
-        queries.GET_ATTRIBUTES_BY_SUBCATEGORY_ID,
-        [subcategoryId]
+      const { subcategoryId } = req.params;
+      const attributes = await ProductService.getAttributesBySubcategoryId(
+        subcategoryId
       );
-      res.json(result.rows);
+      res.json(attributes);
     } catch (error) {
-      console.error("Error fetching attributes:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
-  static async searchProducts(req, res) {
-    const {
-      query,
-      page = 1,
-      limit = 10,
-      sortBy = "name",
-      order = "asc",
-    } = req.query;
-    const parsedPage = parseInt(page, 10);
-    const parsedLimit = parseInt(limit, 10);
 
-    if (
-      isNaN(parsedPage) ||
-      isNaN(parsedLimit) ||
-      parsedPage < 1 ||
-      parsedLimit < 1
-    ) {
-      return res.status(400).json({ error: "Invalid page or limit value" });
-    }
-
-    if (!query) {
-      return res.status(400).json({ error: "Search query is required" });
-    }
-
-    const allowedSortFields = ["name", "price", "rating"];
-    const allowedOrder = ["asc", "desc"];
-
-    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "name";
-    const sortOrder = allowedOrder.includes(order.toLowerCase())
-      ? order.toUpperCase()
-      : "ASC";
-
-    const offset = (parsedPage - 1) * parsedLimit;
-
+  static async searchProducts(req, res, next) {
     try {
-      const searchQuery = `
-        SELECT 
-          p.*,
-          (
-            SELECT json_agg(image_url)
-            FROM product_images pi
-            WHERE pi.product_id = p.id
-          ) AS images
-        FROM products p
-        WHERE name ILIKE $1 
-        ORDER BY ${sortField} ${sortOrder}
-        LIMIT $2 OFFSET $3
-      `;
-
-      const countQuery = `
-        SELECT COUNT(*) 
-        FROM products 
-        WHERE name ILIKE $1
-      `;
-
-      const values = [`%${query}%`, parsedLimit, offset];
-
-      const [productsResult, countResult] = await Promise.all([
-        pool.query(searchQuery, values),
-        pool.query(countQuery, [`%${query}%`]),
-      ]);
-
-      const totalCount = parseInt(countResult.rows[0].count, 10);
-      const totalPages = Math.ceil(totalCount / parsedLimit);
-
-      res.json({
-        products: productsResult.rows,
-        totalPages,
-      });
-    } catch (error) {
-      console.error("Error searching products:", error.message);
-      res.status(500).json({ error: "Cannot receive product" });
-    }
-  }
-  static async getSellerProducts(req, res) {
-    const userId = req.user?.userId;
-
-    if (!userId || isNaN(userId)) {
-      console.error("❌ Ошибка: userId невалидный:", userId);
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
-
-    try {
-      const result = await pool.query(
-        `
-        SELECT 
-          p.*,
-          (
-            SELECT json_agg(image_url)
-            FROM product_images pi
-            WHERE pi.product_id = p.id
-          ) AS images
-        FROM products p
-        WHERE p.user_id = $1
-        `,
-        [userId]
+      const { query, page, limit, sortBy, order } = req.query;
+      const result = await ProductService.searchProducts(
+        query,
+        page,
+        limit,
+        sortBy,
+        order
       );
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-      res.json(result.rows.length > 0 ? result.rows : []);
+  static async getSellerProducts(req, res, next) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(400).json({ error: ERROR_MESSAGES.INVALID_USER_ID });
+      }
+
+      const products = await ProductService.getSellerProducts(userId);
+      res.json(products.length > 0 ? products : []);
     } catch (error) {
-      console.error("❌ Ошибка при запросе товаров продавца:", error.message);
-      res.status(500).json({ error: "Cannot fetch seller products" });
+      next(error);
     }
   }
-  static async getCategories(req, res) {
+
+  static async getCategories(req, res, next) {
     try {
-      const result = await pool.query("SELECT id, name FROM categories");
-      res.json(result.rows);
+      const categories = await ProductService.getCategories();
+      res.json(categories);
     } catch (error) {
-      console.error("Ошибка при получении категорий:", error.message);
-      res.status(500).json({ error: "Ошибка сервера" });
+      next(error);
     }
   }
-  static async getSubCategories(req, res) {
+
+  static async getSubCategories(req, res, next) {
     try {
-      const result = await pool.query("SELECT id, name FROM subcategories");
-      res.json(result.rows);
+      const subcategories = await ProductService.getSubCategories();
+      res.json(subcategories);
     } catch (error) {
-      console.error("Ошибка при получении категорий:", error.message);
-      res.status(500).json({ error: "Ошибка сервера" });
+      next(error);
+    }
+  }
+  static async getDiscountedProducts(req, res, next) {
+    try {
+      const products = await ProductService.getDiscountedProducts();
+      res.json(products);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getTopSellingProducts(req, res, next) {
+    try {
+      const { limit = 10 } = req.query;
+      const products = await ProductService.getTopSellingProducts(limit);
+      res.json(products);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getTrendingProducts(req, res, next) {
+    try {
+      const { limit = 10 } = req.query;
+      const products = await ProductService.getTrendingProducts(limit);
+      res.json(products);
+    } catch (error) {
+      next(error);
+    }
+  }
+  static async getPersonalizedProducts(req, res, next) {
+    try {
+      const userId = req.user.userId;
+      const { limit = 10 } = req.query;
+
+      const products = await RecommendationService.getPersonalizedProducts(
+        userId,
+        limit
+      );
+      res.json(products);
+    } catch (error) {
+      next(error);
     }
   }
 }

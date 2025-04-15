@@ -10,9 +10,13 @@ import {
   FaCalendarAlt,
   FaMapMarkerAlt,
   FaClock,
+  FaChevronRight,
+  FaTimesCircle,
 } from "react-icons/fa";
-import { Order } from ".";
+
 import Link from "next/link";
+import { useMediaQuery } from "react-responsive";
+import { Order } from "@/redux/slices/orderSlice";
 
 interface OrderPageProps {
   order: Order;
@@ -21,180 +25,314 @@ interface OrderPageProps {
 const statusSteps = [
   {
     key: "registered",
-    label: "Зарегистрирован",
+    label: "Registered",
     icon: <FaClipboardList />,
   },
-  { key: "paid", label: "Оплачен", icon: <FaCheckCircle /> },
+  { key: "paid", label: "Paid", icon: <FaCheckCircle /> },
   {
     key: "prepared",
-    label: "Продукты подготовлены для доставки",
+    label: "Products Prepared",
     icon: <FaBoxOpen />,
   },
-  { key: "shipped", label: "Отправленные продукты", icon: <FaTruck /> },
-  { key: "in_transit", label: "В пути на адрес", icon: <FaTruck /> },
-  { key: "delivered", label: "Доставлен на адрес", icon: <FaCheckCircle /> },
-  { key: "received", label: "Принятый продукт", icon: <FaCheckCircle /> },
+  { key: "shipped", label: "Shipped", icon: <FaTruck /> },
+  { key: "in_transit", label: "In Transit", icon: <FaTruck /> },
+  { key: "delivered", label: "Delivered", icon: <FaCheckCircle /> },
+  { key: "received", label: "Received", icon: <FaCheckCircle /> },
 ];
 
 const OrderPage: React.FC<OrderPageProps> = ({ order }) => {
   const router = useRouter();
-
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+  console.log(order);
   if (!order || !order.items) {
-    return <div>Загрузка...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        Loading...
+      </div>
+    );
   }
 
   const getStatusIndex = (status: string) => {
     return statusSteps.findIndex((step) => step.key === status);
   };
 
+  const isCancelled = (status: string) => {
+    return (
+      status === "cancelled" ||
+      status === "cancelled_by_buyer" ||
+      status === "cancelled_by_seller"
+    );
+  };
+
   return (
-    <div className="p-6 max-w-4xl mx-auto min-h-screen bg-gray-100">
+    <div className="p-4 max-w-4xl mx-auto min-h-screen bg-gray-50">
       <motion.h1
-        className="text-3xl font-bold text-gray-800 text-center mb-6"
+        className="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-6"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        Отследить доставку заказа №{order.id}
+        Order Tracking #{order.id}
       </motion.h1>
 
-      <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center space-x-2">
-            <FaCalendarAlt className="text-gray-500" />
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6">
+        <h2 className="text-lg font-semibold mb-4 text-gray-800">
+          Order Information
+        </h2>
+
+        <div className="space-y-3">
+          <div className="flex items-start space-x-3">
+            <FaCalendarAlt className="text-gray-400 mt-0.5 flex-shrink-0" />
             <p className="text-gray-600">
-              Зарегистрирован: {new Date(order.created_at).toLocaleString()}
+              <span className="text-gray-500">Date:</span>{" "}
+              {new Date(order.created_at).toLocaleString()}
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <FaMapMarkerAlt className="text-gray-500" />
-            <p className="text-gray-600">Адрес: {order.delivery_address}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <FaClock className="text-gray-500" />
+          <div className="flex items-start space-x-3">
+            <FaMapMarkerAlt className="text-gray-400 mt-0.5 flex-shrink-0" />
             <p className="text-gray-600">
-              Ожидаемая доставка:{" "}
+              <span className="text-gray-500">Address:</span>{" "}
+              {order.delivery_address}
+            </p>
+          </div>
+          <div className="flex items-start space-x-3">
+            <FaClock className="text-gray-400 mt-0.5 flex-shrink-0" />
+            <p className="text-gray-600">
+              <span className="text-gray-500">Delivery:</span>{" "}
               {new Date(order.estimated_delivery_date).toLocaleDateString()}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
-        <h2 className="text-xl font-semibold mb-4">Товары в заказе</h2>
-        {order.items.map((item) => {
-          const activeStatusIndex = getStatusIndex(item.status);
-          const progressPercentage =
-            6 + (activeStatusIndex / (statusSteps.length - 1)) * 94;
-          const imagePosition =
-            (activeStatusIndex / (statusSteps.length - 1)) * 88;
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6">
+        <h2 className="text-lg font-semibold mb-4 text-gray-800">
+          Products ({order.items.length})
+        </h2>
 
-          return (
-            <div key={item.product_id} className="mb-8">
-              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg mb-2 hover:bg-gray-100 transition-colors duration-200">
-                <div className="flex items-center space-x-4">
+        <div className="space-y-4">
+          {order.items.map((item) => {
+            const activeStatusIndex = getStatusIndex(item.status);
+            const currentStatus = statusSteps.find(
+              (step) => step.key === item.status
+            );
+            const cancelled = isCancelled(item.status);
+
+            return (
+              <div
+                key={item.product_id}
+                className="border-b border-gray-100 pb-4 last:border-0 last:pb-0"
+              >
+                <div className="flex items-start space-x-3 mb-3">
                   {item.images?.length > 0 && (
                     <Link href={`/products/${item.product_id}`} passHref>
                       <img
                         src={item.images[0]}
-                        alt="Товар"
-                        className="w-16 h-16 rounded object-cover"
+                        alt="Product"
+                        className="w-16 h-16 rounded-lg object-cover border border-gray-100"
                       />
                     </Link>
                   )}
-                  <div>
-                    <p className="text-lg font-medium">{item.product_name}</p>
+                  <div className="flex-1">
+                    <Link href={`/products/${item.product_id}`} passHref>
+                      <p className="font-medium text-gray-800 hover:text-blue-600 transition-colors">
+                        {item.product_name}
+                      </p>
+                    </Link>
                     <p className="text-gray-500 text-sm">
-                      Количество: {item.quantity}
+                      Quantity: {item.quantity}
                     </p>
                     <p className="text-gray-500 text-sm">
-                      Цена: {item.price} $
+                      Price: {item.price} $
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`text-sm px-3 py-1 rounded-full ${
-                    item.status === "delivered" || item.status === "received"
-                      ? "bg-green-200 text-green-800"
-                      : item.status === "shipped" ||
-                        item.status === "in_transit"
-                      ? "bg-blue-200 text-blue-800"
-                      : item.status === "cancelled" ||
-                        item.status === "cancelled_by_buyer" ||
-                        item.status === "cancelled_by_seller"
-                      ? "bg-red-200 text-red-800"
-                      : "bg-gray-200 text-gray-800"
-                  }`}
-                >
-                  {item.status === "cancelled_by_buyer"
-                    ? "Отменено покупателем"
-                    : item.status === "cancelled_by_seller"
-                    ? "Отменено продавцом"
-                    : statusSteps.find((step) => step.key === item.status)
-                        ?.label || item.status}
-                </span>
-              </div>
 
-              <div className="mt-4 relative">
-                <div className="relative">
-                  <div className="absolute w-full h-1 -top-1/4 bg-gray-300 transform -translate-y-1/2">
+                {isMobile && (
+                  <div className="mt-2">
                     <div
-                      className="h-1 bg-blue-500"
-                      style={{ width: `${progressPercentage}%` }}
-                    ></div>
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                        item.status === "delivered" ||
+                        item.status === "received"
+                          ? "bg-green-100 text-green-800"
+                          : item.status === "shipped" ||
+                            item.status === "in_transit"
+                          ? "bg-blue-100 text-blue-800"
+                          : cancelled
+                          ? "bg-red-100 text-red-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {item.status === "cancelled_by_buyer"
+                        ? "Cancelled by Buyer"
+                        : item.status === "cancelled_by_seller"
+                        ? "Cancelled by Seller"
+                        : currentStatus?.label || item.status}
+                    </div>
                   </div>
+                )}
 
-                  <div className="grid grid-cols-7 gap-4 relative z-10 mt-8">
-                    {statusSteps.map((step, index) => {
-                      const isActive = index <= activeStatusIndex;
-
-                      return (
+                {!isMobile && (
+                  <div className="mt-4">
+                    <div className="relative">
+                      <div className="absolute w-full h-1.5 top-3/4 bg-gray-200 transform -translate-y-1/2 rounded-full">
                         <div
-                          key={`${item.product_id}-${step.key}`}
-                          className="flex flex-col items-center text-center"
-                        >
-                          <div
-                            className={`p-2 rounded-full ${
-                              isActive
-                                ? "bg-blue-500 text-white"
-                                : "bg-gray-300 text-gray-600"
-                            }`}
-                          >
-                            {step.icon}
-                          </div>
-                          <p
-                            className={`mt-2 text-xs ${
-                              isActive
-                                ? "font-bold text-gray-800"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {step.label}
-                          </p>
-                        </div>
-                      );
-                    })}
+                          className={`h-1.5 rounded-full ${
+                            cancelled
+                              ? "bg-gradient-to-r from-red-500 to-red-400"
+                              : "bg-gradient-to-r from-blue-500 to-blue-400"
+                          }`}
+                          style={{
+                            width: `${
+                              6 +
+                              (activeStatusIndex / (statusSteps.length - 1)) *
+                                94
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-4 relative z-10">
+                        {statusSteps.map((step, index) => {
+                          const isActive = index <= activeStatusIndex;
+
+                          return (
+                            <div
+                              key={`${item.product_id}-${step.key}`}
+                              className="flex flex-col items-center text-center"
+                            >
+                              <div
+                                className={`p-2 rounded-full ${
+                                  isActive
+                                    ? cancelled
+                                      ? "bg-gradient-to-br from-red-500 to-red-400 text-white shadow-sm"
+                                      : "bg-gradient-to-br from-blue-500 to-blue-400 text-white shadow-sm"
+                                    : "bg-gray-200 text-gray-500"
+                                }`}
+                              >
+                                {cancelled &&
+                                isActive &&
+                                index === activeStatusIndex ? (
+                                  <FaTimesCircle />
+                                ) : (
+                                  step.icon
+                                )}
+                              </div>
+                              <p
+                                className={`mt-8 text-xs ${
+                                  isActive
+                                    ? cancelled
+                                      ? "font-medium text-red-600"
+                                      : "font-medium text-gray-800"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {step.label}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {isMobile && (
+                  <div className="mt-4 space-y-3">
+                    <h3 className="font-medium text-gray-700 text-sm">
+                      Delivery Status:
+                    </h3>
+                    <div className="space-y-2">
+                      {statusSteps.map((step, index) => {
+                        const isActive = index <= activeStatusIndex;
+                        const isCurrent = index === activeStatusIndex;
+
+                        return (
+                          <div
+                            key={`mobile-${item.product_id}-${step.key}`}
+                            className={`flex items-start space-x-3 p-2 rounded-lg ${
+                              isCurrent
+                                ? cancelled
+                                  ? "bg-red-50"
+                                  : "bg-blue-50"
+                                : ""
+                            }`}
+                          >
+                            <div
+                              className={`p-2 rounded-full ${
+                                isActive
+                                  ? cancelled
+                                    ? "bg-red-500 text-white"
+                                    : "bg-blue-500 text-white"
+                                  : "bg-gray-200 text-gray-500"
+                              }`}
+                            >
+                              {cancelled && isCurrent ? (
+                                <FaTimesCircle />
+                              ) : (
+                                step.icon
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p
+                                className={`text-sm ${
+                                  isActive
+                                    ? cancelled
+                                      ? "font-medium text-red-600"
+                                      : "font-medium text-gray-800"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {step.label}
+                              </p>
+                              {isCurrent && (
+                                <p
+                                  className={`text-xs mt-1 ${
+                                    cancelled ? "text-red-600" : "text-blue-600"
+                                  }`}
+                                >
+                                  {cancelled
+                                    ? "Order Cancelled"
+                                    : "Current Status"}
+                                </p>
+                              )}
+                            </div>
+                            {isActive &&
+                              (cancelled ? (
+                                <FaTimesCircle className="text-red-500 mt-2 flex-shrink-0" />
+                              ) : (
+                                <FaCheckCircle className="text-green-500 mt-2 flex-shrink-0" />
+                              ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-xl font-semibold mb-4">Информация о доставке</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center space-x-2">
-            <FaCalendarAlt className="text-gray-500" />
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+        <h2 className="text-lg font-semibold mb-4 text-gray-800">
+          Delivery Information
+        </h2>
+        <div className="space-y-3">
+          <div className="flex items-start space-x-3">
+            <FaCalendarAlt className="text-gray-400 mt-0.5 flex-shrink-0" />
             <p className="text-gray-600">
-              Дата доставки:{" "}
+              <span className="text-gray-500">Delivery Date:</span>{" "}
               {new Date(order.estimated_delivery_date).toLocaleDateString()}
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <FaMapMarkerAlt className="text-gray-500" />
-            <p className="text-gray-600">Адрес: {order.delivery_address}</p>
+          <div className="flex items-start space-x-3">
+            <FaMapMarkerAlt className="text-gray-400 mt-0.5 flex-shrink-0" />
+            <p className="text-gray-600">
+              <span className="text-gray-500">Address:</span>{" "}
+              {order.delivery_address}
+            </p>
           </div>
         </div>
       </div>

@@ -1,31 +1,32 @@
-const pool = require("../config/db");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { findByEmail } = require("../models/UserModel");
-const queries = require("../queries/auth.queries");
+const AuthService = require("../services/auth.service");
+const ERROR_MESSAGES = require("../constants/messageErrors");
 
 const ACCESS_TOKEN_EXPIRES = "15m";
 const REFRESH_TOKEN_EXPIRES = "7d";
-
 class AuthController {
-  static async register(req, res) {
-    const { email, password, role = "buyer" } = req.body;
+  static async register(req, res, next) {
+    const { name, email, password, role = "buyer" } = req.body;
 
     try {
-      const existingUser = await pool.query(queries.GET_EMAIL_USER, [email]);
-      if (existingUser.rows.length > 0) {
-        return res
-          .status(400)
-          .json({ error: "User with this email already exists" });
+      if (!name) {
+        return res.status(400).json({ error: "Name is required" });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const result = await pool.query(queries.SIGN_USER, [
+      const existingUser = await AuthService.findByEmail(email);
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({ error: ERROR_MESSAGES.EMAIL_ALREADY_EXISTS });
+      }
+
+      const hashedPassword = await AuthService.hashPassword(password);
+      const user = await AuthService.createUser(
+        name,
         email,
         hashedPassword,
-        role,
-      ]);
-      const user = result.rows[0];
+        role
+      );
 
       const accessToken = jwt.sign(
         { userId: user.id, role: user.role },
@@ -38,7 +39,7 @@ class AuthController {
         { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
 
-      await pool.query(queries.REFRESH_TOKEN, [user.id, refreshToken]);
+      await AuthService.saveRefreshToken(user.id, refreshToken);
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
@@ -56,25 +57,33 @@ class AuthController {
 
       res.json({ user });
     } catch (error) {
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async login(req, res) {
+  static async login(req, res, next) {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
-    }
-
     try {
-      const user = await findByEmail(email);
-      if (!user || !(await bcrypt.compare(password, user.password))) {
-        return res.status(401).json({ error: "Invalid credentials" });
+      if (!email || !password) {
+        return res
+          .status(400)
+          .json({ error: ERROR_MESSAGES.EMAIL_PASSWORD_REQUIRED });
+      }
+
+      const user = await AuthService.findByEmail(email);
+      if (
+        !user ||
+        !(await AuthService.verifyPassword(password, user.password))
+      ) {
+        return res
+          .status(401)
+          .json({ error: ERROR_MESSAGES.INVALID_CREDENTIALS });
       }
       if (user.is_blocked) {
-        return res.status(403).json({ error: "Account is blocked" });
+        return res.status(403).json({ error: ERROR_MESSAGES.ACCOUNT_BLOCKED });
       }
+
       const accessToken = jwt.sign(
         { userId: user.id, role: user.role },
         process.env.JWT_SECRET,
@@ -86,7 +95,7 @@ class AuthController {
         { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
 
-      await pool.query(queries.REFRESH_TOKEN, [user.id, refreshToken]);
+      await AuthService.saveRefreshToken(user.id, refreshToken);
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
@@ -103,30 +112,31 @@ class AuthController {
 
       res.json({ user });
     } catch (error) {
-      res.status(500).json({ error: "Login error" });
+      next(error);
     }
   }
 
   static async logout(req, res) {
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
-    res.json({ message: "Logged out successfully" });
+    res.json({ message: ERROR_MESSAGES.LOGOUT_SUCCESS });
   }
 
-  static async refreshToken(req, res) {
+  static async refreshToken(req, res, next) {
     const { refreshToken } = req.cookies;
 
-    if (!refreshToken) {
-      return res.status(401).json({ error: "Refresh token is required" });
-    }
-
     try {
-      const tokenExists = await pool.query(queries.GET_REFRESH_TOKEN, [
-        refreshToken,
-      ]);
+      if (!refreshToken) {
+        return res
+          .status(401)
+          .json({ error: ERROR_MESSAGES.REFRESH_TOKEN_REQUIRED });
+      }
 
-      if (tokenExists.rows.length === 0) {
-        return res.status(403).json({ error: "Invalid refresh token" });
+      const tokenExists = await AuthService.getRefreshToken(refreshToken);
+      if (!tokenExists) {
+        return res
+          .status(403)
+          .json({ error: ERROR_MESSAGES.INVALID_REFRESH_TOKEN });
       }
 
       const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
@@ -146,8 +156,11 @@ class AuthController {
 
       res.json({ accessToken: newAccessToken });
     } catch (error) {
-      return res.status(403).json({ error: "Invalid refresh token" });
+      return res
+        .status(403)
+        .json({ error: ERROR_MESSAGES.INVALID_REFRESH_TOKEN });
     }
   }
 }
+
 module.exports = AuthController;

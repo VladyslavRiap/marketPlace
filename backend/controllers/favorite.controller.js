@@ -1,74 +1,67 @@
-const pool = require("../config/db");
-const queries = require("../queries/favorite.queries");
+const FavoriteService = require("../services/favorite.service");
+const ERROR_MESSAGES = require("../constants/messageErrors");
+
 class FavoriteController {
-  static async addToFavorites(req, res) {
+  static async addToFavorites(req, res, next) {
     const { userId } = req.user;
     const { productId } = req.body;
 
-    if (!productId) {
-      return res.status(400).json({ error: "Product ID is required" });
-    }
-
     try {
-      const product = await pool.query(queries.GET_PRODUCT_ID, [productId]);
-      if (product.rows.length === 0) {
-        return res.status(404).json({ error: "Product not found" });
+      if (!productId) {
+        return res
+          .status(400)
+          .json({ error: ERROR_MESSAGES.PRODUCT_ID_REQUIRED });
       }
 
-      const existingFavorite = await pool.query(queries.GET_userID_productId, [
-        userId,
-        productId,
-      ]);
-
-      if (existingFavorite.rows.length > 0) {
-        return res.status(400).json({ error: "Product already in favorites" });
+      const product = await FavoriteService.getProduct(productId);
+      if (!product) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.PRODUCT_NOT_FOUND });
       }
 
-      const result = await pool.query(queries.ADD_TO_FAVORITE, [
+      const existingFavorite = await FavoriteService.getFavorite(
         userId,
-        productId,
-      ]);
+        productId
+      );
+      if (existingFavorite) {
+        return res.status(400).json({ error: ERROR_MESSAGES.FAVORITE_EXISTS });
+      }
 
-      res.status(201).json(result.rows[0]);
+      const favorite = await FavoriteService.addToFavorites(userId, productId);
+      res.status(201).json(favorite);
     } catch (error) {
-      console.error("Error adding to favorites:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async getFavorites(req, res) {
+  static async getFavorites(req, res, next) {
     const { userId } = req.user;
 
     try {
-      const result = await pool.query(queries.GET_FAVORITE_LIST, [userId]);
-
-      res.json(result.rows);
+      const favorites = await FavoriteService.getFavorites(userId);
+      res.json(favorites);
     } catch (error) {
-      console.error("Error fetching favorites:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async removeFromFavorites(req, res) {
+  static async removeFromFavorites(req, res, next) {
     const { userId } = req.user;
     const { id } = req.params;
 
     try {
-      const favorite = await pool.query(queries.GET_FROM_FAVORITE, [
-        id,
-        userId,
-      ]);
-
-      if (favorite.rows.length === 0) {
-        return res.status(404).json({ error: "Favorite not found" });
+      const favorite = await FavoriteService.getFavoriteById(id, userId);
+      if (!favorite) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.FAVORITE_NOT_FOUND });
       }
 
-      await pool.query(queries.DELETE_FROM_FAVORITE, [id, userId]);
-
-      res.json({ message: "Product removed from favorites" });
+      await FavoriteService.removeFromFavorites(id, userId);
+      res.json({ message: ERROR_MESSAGES.FAVORITE_REMOVED });
     } catch (error) {
-      console.error("Error removing from favorites:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 }

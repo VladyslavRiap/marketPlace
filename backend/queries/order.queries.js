@@ -1,9 +1,9 @@
 module.exports = {
   createOrder: `
-    INSERT INTO orders (user_id, delivery_address, estimated_delivery_date, status)
-    VALUES ($1, $2, $3, $4)
-    RETURNING *;
-  `,
+  INSERT INTO orders (user_id, delivery_address, estimated_delivery_date, status, phone, first_name, last_name, city, region)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  RETURNING *;
+`,
 
   createOrderItem: `
   INSERT INTO order_items (order_id, product_id, seller_id, quantity, price)
@@ -53,8 +53,10 @@ WHERE
     c.user_id = $1;
 `,
   getOrderByIdAndUser: `
-SELECT * FROM orders
-WHERE id = $1 AND user_id = $2;
+  SELECT 
+    o.* 
+  FROM orders o
+  WHERE o.id = $1 AND o.user_id = $2;
 `,
 
   GET_ORDERS_BY_BUYER: `
@@ -65,6 +67,11 @@ WHERE id = $1 AND user_id = $2;
     o.status, 
     o.created_at, 
     o.updated_at,
+    o.phone,
+    o.first_name,
+    o.last_name,
+    o.city,
+    o.region,
     json_agg(json_build_object(
       'product_id', oi.product_id,
       'product_name', p.name,
@@ -93,6 +100,11 @@ WHERE id = $1 AND user_id = $2;
     o.status, 
     o.created_at, 
     o.updated_at,
+    o.phone,
+    o.first_name,
+    o.last_name,
+    o.city,
+    o.region,
     json_agg(json_build_object(
       'product_id', oi.product_id,
       'product_name', p.name,

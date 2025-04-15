@@ -21,6 +21,9 @@ router.get("/mine", authMiddleware, productController.getSellerProducts);
 router.get("/categories", productController.getCategories);
 router.get("/subcategories", productController.getSubCategories);
 router.post("/:productId/attributes", productController.addProductAttributes);
+router.get("/discounted", productController.getDiscountedProducts);
+router.get("/top-selling", productController.getTopSellingProducts);
+router.get("/trending", productController.getTrendingProducts);
 /**
  * @swagger
  * /api/products:

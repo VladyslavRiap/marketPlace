@@ -1,24 +1,21 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
-import { XCircle } from "lucide-react";
+import { X } from "lucide-react";
 import {
-  addProduct,
   updateProduct,
-  addProductAttributes,
-  Product,
+  fetchSellerProducts,
 } from "@/redux/slices/productsSlice";
 import {
   fetchCategories,
   fetchSubcategories,
 } from "@/redux/slices/categorySlice";
 import ProductForm from "../forms/ProductForm";
-import AttributeForm from "../forms/AttributeForm";
+import { Product } from "../../../../types/product";
 
 interface ProductModalProps {
   onClose: () => void;
-  productToEdit?: Product | null;
-
+  productToEdit: Product;
   onSuccess?: () => void;
 }
 
@@ -28,19 +25,9 @@ const ProductModal: React.FC<ProductModalProps> = ({
   onSuccess,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { sellerStatus, error } = useSelector(
-    (state: RootState) => state.products
-  );
+  const { error } = useSelector((state: RootState) => state.products);
   const { categories, subcategories } = useSelector(
     (state: RootState) => state.categories
-  );
-
-  const [step, setStep] = useState(1);
-  const [productId, setProductId] = useState<number | null>(
-    productToEdit?.id || null
-  );
-  const [subcategoryId, setSubcategoryId] = useState<number | null>(
-    productToEdit?.subcategory ? Number(productToEdit.subcategory) : null
   );
 
   useEffect(() => {
@@ -48,91 +35,70 @@ const ProductModal: React.FC<ProductModalProps> = ({
   }, [dispatch]);
 
   useEffect(() => {
-    if (subcategoryId) {
-      dispatch(fetchSubcategories(Number(subcategoryId)));
+    if (productToEdit.subcategory) {
+      dispatch(fetchSubcategories(Number(productToEdit.subcategory)));
     }
-  }, [subcategoryId, dispatch]);
+  }, [productToEdit.subcategory, dispatch]);
 
   const handleProductSubmit = async (productData: FormData) => {
     try {
-      if (productToEdit) {
-        await dispatch(
-          updateProduct({ id: productToEdit.id, product: productData })
-        ).unwrap();
+      const editFormData = new FormData();
+      editFormData.append("name", productData.get("name") as string);
+      editFormData.append(
+        "description",
+        productData.get("description") as string
+      );
+      editFormData.append("price", productData.get("price") as string);
 
-        onSuccess?.();
-        onClose();
-      } else {
-        const resultAction = await dispatch(addProduct(productData));
-        if (addProduct.fulfilled.match(resultAction)) {
-          const newProductId = resultAction.payload.id;
-          setProductId(newProductId);
-          const subcategoryId = Number(productData.get("subcategory_id"));
-          setSubcategoryId(subcategoryId);
-          setStep(2);
-          setStep(2);
-        }
+      const images = productData.getAll("images");
+      images.forEach((image) => {
+        editFormData.append("images", image);
+      });
+
+      if (productToEdit.subcategory) {
+        editFormData.append(
+          "subcategory_id",
+          productToEdit.subcategory.toString()
+        );
       }
+
+      await dispatch(
+        updateProduct({ id: productToEdit.id, product: editFormData })
+      ).unwrap();
+
+      onSuccess?.();
+      dispatch(fetchSellerProducts());
+      onClose();
     } catch (error) {
-      console.error("Ошибка при сохранении продукта:", error);
-    }
-  };
-
-  const handleAttributesSubmit = async (attributes: any[]) => {
-    if (productId && subcategoryId) {
-      try {
-        await dispatch(
-          addProductAttributes({ productId, attributes })
-        ).unwrap();
-
-        onSuccess?.();
-        onClose();
-      } catch (error) {
-        console.error("Ошибка при добавлении атрибутов:", error);
-      }
+      console.error("Error updating product:", error);
     }
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
-      <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg relative max-h-[90vh] overflow-y-auto">
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-red-500"
-        >
-          <XCircle className="w-6 h-6" />
-        </button>
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90dvh] overflow-y-auto relative">
+        <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-10">
+          <h2 className="text-xl font-semibold">Edit Product</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-red-500 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-        <h2 className="text-2xl font-semibold text-center">
-          {productToEdit
-            ? "Редактировать продукт"
-            : step === 1
-            ? "Добавить продукт"
-            : "Добавить атрибуты"}
-        </h2>
+        <div className="p-4">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg">
+              {error}
+            </div>
+          )}
 
-        {error && <p className="text-red-500 text-center">{error}</p>}
-
-        {step === 1 ? (
           <ProductForm
             initialProduct={productToEdit}
             onSubmit={handleProductSubmit}
+            isEditMode={true}
           />
-        ) : (
-          <AttributeForm
-            productId={productId}
-            subcategoryId={subcategoryId}
-            onSubmit={handleAttributesSubmit}
-          />
-        )}
-
-        <div className="mt-4 flex justify-between">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
-          >
-            Закрыть
-          </button>
         </div>
       </div>
     </div>

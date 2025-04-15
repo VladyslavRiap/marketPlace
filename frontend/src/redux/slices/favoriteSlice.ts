@@ -1,16 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/utils/api";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  description: string;
-  image_url: string;
-  images: string[];
-  rating: string;
-}
+import { Product } from "../../../types/product";
 
 interface FavoriteState {
   favorites: Product[];
@@ -32,7 +22,7 @@ export const fetchFavorites = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка загрузки избранного"
+        error.response?.data?.error || "Error loading favorites"
       );
     }
   }
@@ -42,11 +32,14 @@ export const addToFavorites = createAsyncThunk(
   "favorite/addToFavorites",
   async (productId: number, { rejectWithValue }) => {
     try {
-      const response = await api.post("/favorites", { productId });
-      return response.data;
+      const addResponse = await api.post("/favorites", { productId });
+
+      const productResponse = await api.get(`/products/${productId}`);
+
+      return productResponse.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка добавления в избранное"
+        error.response?.data?.error || "Error add favorites"
       );
     }
   }
@@ -60,7 +53,7 @@ export const removeFromFavorites = createAsyncThunk(
       return favoriteId;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка удаления из избранного"
+        error.response?.data?.error || "Error deleted from favorites"
       );
     }
   }
@@ -90,7 +83,10 @@ const favoriteSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(addToFavorites.fulfilled, (state, action) => {
-        state.favorites.push(action.payload);
+        const newProduct = action.payload;
+        if (!state.favorites.some((item) => item.id === newProduct.id)) {
+          state.favorites = [...state.favorites, newProduct];
+        }
       })
       .addCase(removeFromFavorites.fulfilled, (state, action) => {
         state.favorites = state.favorites.filter(

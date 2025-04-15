@@ -4,17 +4,36 @@ const adminController = require("../controllers/admin.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 const checkRole = require("../middlewares/role.middleware");
 const multer = require("multer");
+const ERROR_MESSAGES = require("../constants/messageErrors");
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+    files: 1, // Only allow 1 file if your service only handles one image
+  },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed"), false);
+      cb(new Error(ERROR_MESSAGES.INVALID_FILE_TYPE), false);
     }
   },
-}).array("images", 5);
+}).single("image"); // Change to .single() if only one image is needed
+
+const handleMulterError = (err, req, res, next) => {
+  if (err) {
+    return res.status(400).json({
+      error: ERROR_MESSAGES.VALIDATION_ERROR,
+      message: err.message || ERROR_MESSAGES.FILE_UPLOAD_ERROR,
+      details: {
+        code: err.code,
+        field: err.field,
+      },
+    });
+  }
+  next();
+};
 /**
  * @swagger
  * /api/admin/stats:
@@ -196,7 +215,14 @@ router.put(
   checkRole(["admin"]),
   adminController.unblockUser
 );
-router.get("/ads", adminController.getAds);
-router.post("/ads", upload, adminController.addAd);
+router.get("/ads", adminController.getAdsByPosition);
+router.post(
+  "/ads",
+  authMiddleware,
+  checkRole(["admin"]),
+  upload,
+  handleMulterError,
+  adminController.addAd
+);
 router.delete("/ads/:id", adminController.deleteAd);
 module.exports = router;

@@ -18,9 +18,7 @@ interface UsersPageProps {
 const UsersPage: React.FC<UsersPageProps> = ({ users }) => {
   return (
     <AdminLayout>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Управление пользователями
-      </h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">User management</h1>
       <UserTable users={users} />
     </AdminLayout>
   );

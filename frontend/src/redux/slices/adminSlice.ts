@@ -1,5 +1,3 @@
-// adminSlice.ts
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 
@@ -19,22 +17,25 @@ interface User {
   is_blocked: boolean;
   role: string;
 }
-
 interface Ad {
   id: number;
   image_url: string;
+  position?: string;
+  title?: string;
+  link_url?: string;
+  is_active?: boolean;
 }
 
 interface AdminState {
   products: Product[];
   users: User[];
-  ads: Ad[];
+  ads: Record<string, Ad[]>;
 }
 
 const initialState: AdminState = {
   products: [],
   users: [],
-  ads: [],
+  ads: {},
 };
 
 export const fetchProducts = createAsyncThunk(
@@ -74,25 +75,42 @@ export const unblockUser = createAsyncThunk(
   }
 );
 
-export const fetchAds = createAsyncThunk("admin/fetchAds", async () => {
-  const response = await api.get("/admin/ads");
-  return response.data;
-});
+export const fetchAdsByPosition = createAsyncThunk(
+  "admin/ads",
+  async (position: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/admin/ads?position=${position}`);
+      return { position, ads: response.data };
+    } catch (error: any) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
 
-export const addAd = createAsyncThunk("admin/addAd", async (files: File[]) => {
-  const formData = new FormData();
-  files.forEach((file) => {
-    formData.append("images", file);
-  });
+export const addAd = createAsyncThunk(
+  "admin/addAd",
+  async (
+    adData: { image: File; position: string; title: string; linkUrl: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const formData = new FormData();
+      formData.append("image", adData.image);
+      formData.append("position", adData.position);
+      formData.append("title", adData.title);
+      formData.append("link_url", adData.linkUrl);
 
-  const response = await api.post("/admin/ads", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
-});
-
+      const response = await api.post("/admin/ads", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
 export const deleteAd = createAsyncThunk(
   "admin/deleteAd",
   async (adId: number) => {
@@ -130,14 +148,28 @@ const adminSlice = createSlice({
           user.is_blocked = false;
         }
       })
-      .addCase(fetchAds.fulfilled, (state, action) => {
-        state.ads = action.payload;
+      .addCase(fetchAdsByPosition.fulfilled, (state, action) => {
+        const { position, ads } = action.payload;
+        state.ads[position] = ads;
       })
       .addCase(addAd.fulfilled, (state, action) => {
-        state.ads = [...state.ads, ...action.payload];
+        const ad = action.payload;
+        const position = ad.position;
+        if (!position) return;
+
+        if (!state.ads[position]) {
+          state.ads[position] = [];
+        }
+        state.ads[position].push(ad);
       })
       .addCase(deleteAd.fulfilled, (state, action) => {
-        state.ads = state.ads.filter((ad) => ad.id !== action.payload);
+        const adId = action.payload;
+
+        for (const position in state.ads) {
+          state.ads[position] = state.ads[position].filter(
+            (ad) => ad.id !== adId
+          );
+        }
       });
   },
 });

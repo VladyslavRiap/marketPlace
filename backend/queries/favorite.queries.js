@@ -11,7 +11,14 @@ module.exports = {
   p.category, 
   p.description, 
   p.image_url,
-  p.rating, 
+  p.rating,
+  p.price, 
+  p.old_price, 
+   CASE 
+        WHEN p.old_price IS NOT NULL AND p.old_price > p.price 
+        THEN ROUND(((p.old_price - p.price) / p.old_price * 100)) 
+        ELSE NULL 
+      END AS discount_percent,
   (
     SELECT json_agg(image_url)
     FROM product_images pi

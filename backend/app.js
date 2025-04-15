@@ -11,8 +11,12 @@ const adminRoutes = require("./routes/admin.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const favoriteRoutes = require("./routes/favorite.routes");
 const orderRoutes = require("./routes/order.routes");
+const recommendationRoutes = require("./routes/recommendation.routes");
 const cookieParser = require("cookie-parser");
-
+const {
+  errorHandler,
+  notFoundHandler,
+} = require("./middlewares/error.middleware");
 const app = express();
 
 app.use(express.json());
@@ -20,7 +24,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: true,
     credentials: true,
   })
 );
@@ -35,9 +39,12 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url} - ${JSON.stringify(req.body)}`);
   next();
 });
+app.use(notFoundHandler);
 
+app.use(errorHandler);
 module.exports = app;

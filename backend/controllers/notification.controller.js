@@ -1,74 +1,75 @@
-const pool = require("../config/db");
-const queries = require("../queries/notification.queries");
+const NotificationService = require("../services/notification.service");
+const ERROR_MESSAGES = require("../constants/messageErrors");
 
 class NotificationController {
-  static async getNotifications(req, res) {
+  static async getNotifications(req, res, next) {
     const { userId } = req.user;
 
     try {
-      const result = await pool.query(queries.GET_NOTIFICATION, [userId]);
-
-      res.json(result.rows);
+      const notifications = await NotificationService.getNotifications(userId);
+      res.json(notifications);
     } catch (error) {
-      console.error("Error fetching notifications:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async markAsRead(req, res) {
+  static async getUnreadCount(req, res, next) {
+    const { userId } = req.user;
+
+    try {
+      const count = await NotificationService.getUnreadCount(userId);
+      res.json({ count });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async markAsRead(req, res, next) {
     const { id } = req.params;
     const { userId } = req.user;
 
     try {
-      const notification = await pool.query(queries.GET_NOTIFICATION_ID, [
+      const notification = await NotificationService.getNotificationById(
         id,
-        userId,
-      ]);
-
-      if (notification.rows.length === 0) {
-        return res.status(404).json({ error: "Notification not found" });
+        userId
+      );
+      if (!notification) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.NOTIFICATION_NOT_FOUND });
       }
 
-      await pool.query(queries.SET_IS_READ, [id]);
-
-      res.json({ message: "Notification marked as read" });
+      await NotificationService.markAsRead(id);
+      res.json({ message: ERROR_MESSAGES.NOTIFICATION_MARKED_READ });
     } catch (error) {
-      console.error("Error marking notification as read:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async deleteNotification(req, res) {
+  static async deleteNotification(req, res, next) {
     const { id } = req.params;
     const { userId } = req.user;
 
     try {
-      const notification = await pool.query(queries.GET_NOTIFICATION_ID, [
+      const notification = await NotificationService.getNotificationById(
         id,
-        userId,
-      ]);
-
-      if (notification.rows.length === 0) {
-        return res.status(404).json({ error: "Notification not found" });
+        userId
+      );
+      if (!notification) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.NOTIFICATION_NOT_FOUND });
       }
 
-      await pool.query(queries.DELETE_NOTIFICATION, [id]);
-
-      res.json({ message: "Notification deleted successfully" });
+      await NotificationService.deleteNotification(id);
+      res.json({ message: ERROR_MESSAGES.NOTIFICATION_DELETED });
     } catch (error) {
-      console.error("Error deleting notification:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
   static async createNotification({ userId, message }) {
-    const query = `
-      INSERT INTO notifications (user_id, message, is_read)
-      VALUES ($1, $2, false)
-      RETURNING *;
-    `;
-    const result = await pool.query(query, [userId, message]);
-    return result.rows[0];
+    return await NotificationService.createNotification(userId, message);
   }
 }
 

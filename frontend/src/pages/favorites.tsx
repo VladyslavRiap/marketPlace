@@ -1,81 +1,59 @@
 import { GetServerSideProps } from "next";
-import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchFavorites } from "@/redux/slices/favoriteSlice";
 import { motion } from "framer-motion";
+import Head from "next/head";
 
+import FavoritesGrid from "@/components/ui/favorites/FavoritesGrid";
+import PersonalizedProducts from "@/components/ui/favorites/PersonalizedProducts";
 import api from "@/utils/api";
-import ProductCard from "@/components/ui/cards/ProductCard";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  description: string;
-  image_url: string;
-  images: string[];
-  rating: string;
-}
+import { Product } from "../../types/product";
 
 interface FavoritesPageProps {
   initialFavorites: Product[];
+  personalizedProducts: Product[];
 }
 
-const FavoritesPage = ({ initialFavorites }: FavoritesPageProps) => {
-  const dispatch = useAppDispatch();
-
-  const { favorites, loading } = useAppSelector((state) => state.favorite);
-
-  useEffect(() => {
-    if (favorites.length === 0) {
-      dispatch(fetchFavorites());
-    }
-  }, [dispatch, favorites.length]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-      </div>
-    );
-  }
-
+const FavoritesPage = ({
+  initialFavorites,
+  personalizedProducts,
+}: FavoritesPageProps) => {
+  console.log(initialFavorites);
   return (
-    <motion.div
-      className="container mx-auto p-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <h1 className="text-4xl font-bold mb-8 text-gray-900 text-center">
-        Избранные товары
-      </h1>
+    <>
+      <Head>
+        <title>Wishlist</title>
+        <meta name="description" content="Your wishlist items" />
+      </Head>
 
-      {favorites.length === 0 ? (
-        <p className="text-gray-600 text-center text-lg">
-          У вас пока нет избранных товаров.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {favorites.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+      <motion.div
+        className="container mx-auto px-4 py-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="max-w-full mx-auto ">
+          <FavoritesGrid initialFavorites={initialFavorites} />
+          <PersonalizedProducts initialProducts={personalizedProducts} />
         </div>
-      )}
-    </motion.div>
+      </motion.div>
+    </>
   );
 };
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   try {
-    const { data } = await api.get("/favorites", {
-      headers: { cookie: req.headers.cookie || "" },
-    });
+    const [favoritesRes, personalizedRes] = await Promise.all([
+      api.get<Product[]>("/favorites", {
+        headers: { cookie: req.headers.cookie || "" },
+      }),
+      api.get<Product[]>("/recommendations/personalized-products?limit=10", {
+        headers: { cookie: req.headers.cookie || "" },
+      }),
+    ]);
 
     return {
       props: {
-        initialFavorites: data,
+        initialFavorites: favoritesRes.data,
+        personalizedProducts: personalizedRes.data,
       },
     };
   } catch (error) {

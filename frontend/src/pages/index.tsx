@@ -1,37 +1,55 @@
 import { GetServerSideProps } from "next";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   fetchCategories,
   fetchSubcategories,
   setCategories,
 } from "@/redux/slices/categorySlice";
-import { RootState } from "@/redux/store";
 import api from "@/utils/api";
-import { ShoppingBag } from "lucide-react";
-import { categoryIcons, subcategoryIcons } from "@/utils/iconutils";
+import { Category, Subcategory } from "../../types/category";
+import { Menu, X } from "lucide-react";
 import AdSlider from "@/components/AdSlider";
-
-interface Category {
-  id: number;
-  name: string;
-}
+import DesktopCategoryMenu from "@/components/ui/home/DesktopCategoryMenu";
+import MobileCategoryMenu from "@/components/ui/home/MobileCategoryMenu";
+import { Product } from "../../types/product";
+import FlashSales from "@/components/ui/home/FlashSales";
+import Categories from "@/components/ui/home/Categories";
+import TopSellingProducts from "@/components/ui/home/TopSellingProducts";
+import ExploreOurProducts from "@/components/ui/home/ExploreOurProducts";
+import FeaturesSection from "@/components/ui/home/FeaturesSection";
+import AdGridSection from "@/components/ui/home/AdGridSection";
 
 interface HomePageProps {
   initialCategories: Category[];
+  discountedProducts: Product[];
+  topSellingProducts: Product[];
+  trendingProducts: Product[];
+  initialSubcategories: Subcategory[];
+  exploreProducts: {
+    products: Product[];
+  };
 }
 
-const HomePage: React.FC<HomePageProps> = ({ initialCategories }) => {
+const HomePage: React.FC<HomePageProps> = ({
+  initialCategories,
+  discountedProducts,
+  initialSubcategories,
+  topSellingProducts,
+  trendingProducts,
+  exploreProducts,
+}) => {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { categories, subcategories } = useAppSelector(
-    (state: RootState) => state.categories
+    (state) => state.categories
   );
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(
     null
   );
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   useEffect(() => {
     if (initialCategories.length > 0) {
@@ -46,6 +64,7 @@ const HomePage: React.FC<HomePageProps> = ({ initialCategories }) => {
       categoryName
     )}&minPrice=0&maxPrice=10000&rating=&sortBy=id&order=asc`;
     router.push(url);
+    setMobileMenuOpen(false);
   };
 
   const handleSubcategoryClick = (
@@ -61,6 +80,7 @@ const HomePage: React.FC<HomePageProps> = ({ initialCategories }) => {
       subcategoryName
     )}&minPrice=0&maxPrice=10000&rating=&sortBy=id&order=asc`;
     router.push(url);
+    setMobileMenuOpen(false);
   };
 
   const handleCategoryHover = (categoryId: number) => {
@@ -70,68 +90,83 @@ const HomePage: React.FC<HomePageProps> = ({ initialCategories }) => {
     }
   };
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+    if (!mobileMenuOpen) {
+      setSelectedCategory(null);
+    }
+  };
+
+  const handleCategoryLeave = () => {
+    setHoveredCategoryId(null);
+  };
+
+  const toggleCategory = (categoryId: number) => {
+    setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
+    if (!subcategories?.[categoryId]) {
+      dispatch(fetchSubcategories(categoryId));
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-start bg-gray-50">
-      <h1 className="w-full p-2 bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-lg font-semibold tracking-wide">
-        Category
-      </h1>
-      <div className="flex w-full">
-        <div className=" z-10 flex flex-col space-y-4 w-full max-w-xs relative">
-          {categories.map((category) => (
-            <motion.div
-              key={category.id}
-              className="relative"
-              onMouseEnter={() => handleCategoryHover(category.id)}
-              onMouseLeave={() => setHoveredCategoryId(null)}
-              whileHover={{ scale: 1.02 }}
-            >
-              <div
-                className="flex items-center gap-2 px-6 py-3 bg-gray-100 rounded-lg shadow cursor-pointer hover:bg-gray-200 transition"
-                onClick={() => handleCategoryClick(category.name)}
-              >
-                {categoryIcons[category.name] || (
-                  <ShoppingBag className="w-6 h-6 text-gray-700" />
-                )}
-                <p className="text-md font-medium text-gray-900">
-                  {category.name}
-                </p>
-              </div>
-              <AnimatePresence>
-                {hoveredCategoryId === category.id && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    className="absolute left-full top-0 ml-4 bg-white shadow-lg rounded-lg p-4 min-w-[200px] z-10"
-                  >
-                    {subcategories?.[category.id]?.length ? (
-                      subcategories[category.id].map((subcategory) => (
-                        <div
-                          key={subcategory.id}
-                          className="flex items-center gap-2 py-2 text-gray-700 cursor-pointer hover:text-blue-500"
-                          onClick={() =>
-                            handleSubcategoryClick(
-                              subcategory.name,
-                              category.id
-                            )
-                          }
-                        >
-                          {subcategoryIcons[subcategory.name] || (
-                            <ShoppingBag className="w-6 h-6 text-gray-700" />
-                          )}
-                          <p>{subcategory.name}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500">Нет подкатегорий</p>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ))}
+    <div className="min-h-screen bg-gray-50">
+      <div className="lg:hidden sticky top-0 z-10 bg-white shadow-sm">
+        <div className="flex items-center justify-between p-4">
+          <button
+            onClick={toggleMobileMenu}
+            className="p-2 rounded-lg bg-[#DB4444] text-white"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
+          </button>
+          <div className="w-10"></div>
         </div>
-        <AdSlider />
+      </div>
+
+      <div className="flex flex-col lg:flex-row w-full font-sans">
+        <MobileCategoryMenu
+          isOpen={mobileMenuOpen}
+          onClose={toggleMobileMenu}
+          categories={categories}
+          subcategories={subcategories}
+          selectedCategory={selectedCategory}
+          toggleCategory={toggleCategory}
+          handleSubcategoryClick={handleSubcategoryClick}
+        />
+
+        <DesktopCategoryMenu
+          categories={categories}
+          subcategories={subcategories}
+          hoveredCategoryId={hoveredCategoryId}
+          handleCategoryHover={handleCategoryHover}
+          handleCategoryClick={handleCategoryClick}
+          handleCategoryLeave={handleCategoryLeave}
+          handleSubcategoryClick={handleSubcategoryClick}
+        />
+
+        <div className="flex-1">
+          <div className="p-4 lg:p-6">
+            <AdSlider position="header" />
+          </div>
+        </div>
+      </div>
+
+      <div className="px-2 sm:px-4">
+        {" "}
+        <FlashSales discountedProducts={discountedProducts} />
+        <Categories categories={initialSubcategories} />
+        <TopSellingProducts topSellingProducts={topSellingProducts} />
+        <div className="px-2 sm:px-0">
+          {" "}
+          <AdSlider position="mainPage" />
+        </div>
+        <ExploreOurProducts exploreProducts={exploreProducts} />
+        <AdGridSection />
+        <FeaturesSection />
       </div>
     </div>
   );
@@ -139,14 +174,45 @@ const HomePage: React.FC<HomePageProps> = ({ initialCategories }) => {
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   try {
-    const { data: initialCategories } = await api.get("/products/categories", {
-      headers: { cookie: req.headers.cookie || "" },
-    });
+    const headers = { cookie: req.headers.cookie || "" };
+
+    const [
+      categoriesRes,
+      discountedRes,
+      topSellingRes,
+      trendingRes,
+      subcatgorieRes,
+      exploreRes,
+    ] = await Promise.all([
+      api.get("/products/categories", { headers }),
+      api.get("/products/discounted", { headers }),
+      api.get("/products/top-selling", { headers }),
+      api.get("/products/trending", { headers }),
+      api.get("/products/subcategories", { headers }),
+      api.get("/products", { headers }),
+    ]);
+
     return {
-      props: { initialCategories },
+      props: {
+        initialCategories: categoriesRes.data,
+        discountedProducts: discountedRes.data,
+        topSellingProducts: topSellingRes.data,
+        trendingProducts: trendingRes.data,
+        initialSubcategories: subcatgorieRes.data,
+        exploreProducts: exploreRes.data,
+      },
     };
   } catch (error) {
-    return { props: { initialCategories: [] } };
+    return {
+      props: {
+        initialCategories: [],
+        discountedProducts: [],
+        topSellingProducts: [],
+        trendingProducts: [],
+        initialSubcategories: [],
+        exploreProducts: [],
+      },
+    };
   }
 };
 

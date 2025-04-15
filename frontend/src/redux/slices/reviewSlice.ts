@@ -1,7 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "@/utils/api";
-import { Review } from "@/pages/products/[id]";
+
 import { RootState } from "../store";
+import { Review } from "../../../types/prod";
 
 interface ReviewState {
   reviews: Review[];
@@ -110,7 +111,7 @@ const reviewSlice = createSlice({
       })
       .addCase(addReview.fulfilled, (state, action) => {
         state.loading = false;
-        state.reviews.push(action.payload);
+        state.reviews.unshift(action.payload);
       })
       .addCase(addReview.rejected, (state, action) => {
         state.loading = false;
@@ -124,7 +125,7 @@ const reviewSlice = createSlice({
       .addCase(updateReview.fulfilled, (state, action) => {
         state.loading = false;
         const updatedReview = action.payload;
-        state.reviews = state.reviews.map((review) =>
+        state.reviews = state.reviews.map((review: any) =>
           review.id === updatedReview.id ? updatedReview : review
         );
       })

@@ -1,233 +1,211 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ShoppingCart, Star } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { useSnackbarContext } from "@/redux/context/SnackBarContext";
-import {
-  addToFavorites,
-  removeFromFavorites,
-  fetchFavorites,
-} from "@/redux/slices/favoriteSlice";
-import { addToCart, fetchCart } from "@/redux/slices/cartSlice";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  oldPrice?: number;
-  description: string;
-  image_url: string;
-  images: string[];
-  rating: string;
-}
+import { Heart, ShoppingCart, Edit, Trash2, Star } from "lucide-react";
+import { Product } from "../../../../types/product";
+import Button from "@/components/Button";
 
 interface ProductCardProps {
   product: Product;
+  size?: "small" | "medium" | "large";
+  onAddToCart?: () => void;
+  onToggleFavorite?: () => void;
   onEdit?: (id: number) => void;
   onDelete?: (id: number) => void;
+  isInCart?: boolean;
+  isFavorite?: boolean;
+  customFavoriteIcon?: React.ReactNode;
+  showAddToCart?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({
+const ProductCard = ({
   product,
+  size = "medium",
+  onAddToCart,
+  onToggleFavorite,
   onEdit,
   onDelete,
-}) => {
-  const dispatch = useAppDispatch();
-  const { showMessage } = useSnackbarContext();
-  const favoriteList = useAppSelector((state) => state.favorite.favorites);
-  const cartItems = useAppSelector((state) => state.cart.items);
-
-  const [isInCart, setIsInCart] = useState<boolean>(
-    cartItems.some((item) => item.id === product.id)
-  );
-  const isFavorite = favoriteList.some((fav) => fav.id === product.id);
-
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    setIsInCart(cartItems.some((item) => item.id === product.id));
-  }, [cartItems, product.id]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isHovered && product.images && product.images.length > 1) {
-      interval = setInterval(() => {
-        setCurrentImageIndex(
-          (prevIndex) => (prevIndex + 1) % product.images.length
-        );
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isHovered, product.images]);
-
-  const handleFavoriteClick = async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    event.preventDefault();
-
-    try {
-      if (isFavorite) {
-        await dispatch(removeFromFavorites(product.id)).unwrap();
-        showMessage("Товар удален из избранного", "info");
-      } else {
-        await dispatch(addToFavorites(product.id)).unwrap();
-        showMessage("Товар добавлен в избранное", "success");
-      }
-
-      dispatch(fetchFavorites());
-    } catch (error: any) {
-      showMessage("Ошибка: " + error.message, "error");
-    }
-  };
-
-  const handleAddToCart = async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    event.preventDefault();
-
-    try {
-      if (!isInCart) {
-        await dispatch(addToCart(product.id)).unwrap();
-        showMessage("Товар добавлен в корзину", "success");
-
-        dispatch(fetchCart());
-      } else {
-        showMessage("Товар уже в корзине", "info");
-      }
-    } catch (error: any) {
-      showMessage("Ошибка при добавлении в корзину: " + error.message, "error");
-    }
+  isInCart = false,
+  isFavorite = false,
+  customFavoriteIcon,
+  showAddToCart = false,
+}: ProductCardProps) => {
+  const sizeClasses = {
+    small: {
+      container: "h-full flex flex-col",
+      image: "aspect-square h-40",
+      content: "p-2 flex-grow flex flex-col",
+      title: "text-sm line-clamp-2 ",
+      price: "text-base",
+      oldPrice: "text-xs",
+      button: "py-1 px-2 text-xs",
+      actionButton: "p-1 text-xs",
+      discountBadge: "text-xs px-2 py-0.5",
+    },
+    medium: {
+      container: "h-full flex flex-col",
+      content: "p-3 flex-grow flex flex-col",
+      title: "text-md line-clamp-2 ",
+      price: "text-lg",
+      oldPrice: "text-sm",
+      image: "aspect-square lg:h-64 h-40",
+      button: "py-1.5 px-3 text-sm",
+      actionButton: "p-1.5 text-sm",
+      discountBadge: "text-sm px-2 py-1",
+    },
+    large: {
+      container: "h-full flex flex-col",
+      image: "aspect-[4/3] h-80",
+      content: "p-4 flex-grow flex flex-col",
+      title: "text-lg line-clamp-2 ",
+      price: "text-xl",
+      oldPrice: "text-base",
+      button: "py-2 px-4 text-md",
+      actionButton: "p-2 text-md",
+      discountBadge: "text-md px-3 py-1",
+    },
   };
 
   return (
     <motion.div
-      key={product.id}
-      className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition-shadow duration-300"
-      initial={{ opacity: 0, y: 20 }}
+      className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${sizeClasses[size].container}`}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      whileHover={{ y: -2 }}
     >
-      <div className="relative w-full h-56">
+      <div className={`relative ${sizeClasses[size].image} group`}>
+        {(product.discount_percent || product.old_price) && (
+          <div className="absolute top-0 left-0 z-10">
+            <span
+              className={`bg-red-500 text-white font-bold rounded-md ${sizeClasses[size].discountBadge}`}
+            >
+              {product.discount_percent
+                ? `-${product.discount_percent}%`
+                : product.old_price
+                ? "Sale"
+                : ""}
+            </span>
+          </div>
+        )}
+
         <Link href={`/products/${product.id}`} passHref>
           <div className="w-full h-full relative">
-            {product.images && product.images.length > 0 ? (
-              <Image
-                src={product.images[currentImageIndex]}
-                alt={product.name}
-                layout="fill"
-                objectFit="cover"
-                className="hover:scale-105 transition-transform duration-300"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-500">
-                Изображение не доступно
-              </div>
-            )}
+            <Image
+              src={product.images?.[0] || "/placeholder-product.jpg"}
+              alt={product.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover transition-transform duration-300"
+            />
           </div>
         </Link>
 
-        {product.images && product.images.length > 1 && (
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2">
-            {product.images.map((_, index) => (
-              <button
-                key={index}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentImageIndex(index);
-                }}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentImageIndex ? "bg-black" : "bg-gray-400"
+        {onAddToCart && (
+          <div className="absolute -bottom-1 lg:bottom-0 left-0 right-0 bg-white/90  lg:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <Button
+              variant={isInCart ? "secondary" : "primary"}
+              size="sm"
+              onClick={onAddToCart}
+              disabled={isInCart}
+              className={`w-full ${sizeClasses[size].button} ${
+                isInCart ? "opacity-75 cursor-not-allowed" : ""
+              }`}
+            >
+              <ShoppingCart className="w-4 h-4 mr-1" />
+              {isInCart ? "Inside cart" : "Add to cart"}
+            </Button>
+          </div>
+        )}
+
+        <div className="absolute top-2 right-2 flex flex-col gap-2">
+          {onToggleFavorite && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleFavorite}
+              className={`p-1.5 rounded-full bg-white/80 shadow`}
+              aria-label="Remove from favorites"
+            >
+              {customFavoriteIcon || (
+                <Heart
+                  className={`w-4 h-4 ${
+                    isFavorite
+                      ? "text-red-500 fill-red-500"
+                      : "text-gray-600 hover:text-red-500"
+                  }`}
+                />
+              )}
+            </Button>
+          )}
+
+          {(onEdit || onDelete) && (
+            <div className="flex gap-2">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(product.id)}
+                  className="p-1.5 rounded-full bg-white/80 shadow"
+                  aria-label="Edit product"
+                >
+                  <Edit className="w-4 h-4 text-gray-600 hover:text-blue-500" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(product.id)}
+                  className="p-1.5 rounded-full bg-white/80 shadow"
+                  aria-label="Delete product"
+                >
+                  <Trash2 className="w-4 h-4 text-gray-600 hover:text-red-500" />
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={sizeClasses[size].content}>
+        <Link href={`/products/${product.id}`} passHref>
+          <h3
+            className={`flex items-center font-medium text-gray-900  hover:text-[#DB4444] ${sizeClasses[size].title}`}
+          >
+            {product.name}
+          </h3>
+        </Link>
+
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`font-bold text-red-500 ${sizeClasses[size].price}`}>
+            ${product.price}
+          </span>
+          {product.old_price && (
+            <span
+              className={`text-gray-500 line-through ${sizeClasses[size].oldPrice}`}
+            >
+              ${product.old_price}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center">
+          <div className="flex">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-4 h-4 ${
+                  i < Math.floor(Number(product.rating || 0))
+                    ? "text-yellow-400 fill-yellow-400"
+                    : "text-gray-300"
                 }`}
               />
             ))}
           </div>
-        )}
-
-        <button
-          onClick={handleFavoriteClick}
-          className={`absolute top-3 right-3 bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-md  hover:text-white transition ${
-            !isFavorite ? "hover:bg-red-500" : "hover:bg-gray-400"
-          }`}
-        >
-          <Heart
-            className={`w-6 h-6 ${
-              isFavorite ? "text-red-500" : "text-gray-400"
-            }`}
-          />
-        </button>
-      </div>
-
-      <div className="p-5">
-        <Link href={`/products/${product.id}`} passHref>
-          <h2 className="text-xl font-bold text-gray-900 hover:text-indigo-600 transition">
-            {product.name}
-          </h2>
-        </Link>
-        <p className="text-gray-600 text-sm mt-2 line-clamp-2">
-          {product.description}
-        </p>
-        <div className="flex justify-between items-center mt-4">
-          <div>
-            {product.oldPrice && (
-              <span className="text-gray-500 line-through text-sm">
-                ${product.oldPrice}
-              </span>
-            )}
-            <span className="text-indigo-600 text-xl font-bold ml-2">
-              ${product.price}
-            </span>
-          </div>
-          <p className="text-yellow-500 text-lg flex items-center gap-1">
-            <Star className="w-5 h-5" /> {product.rating || 0} / 5
-          </p>
-        </div>
-
-        <div className="mt-6 flex justify-between items-center">
-          {!onEdit && !onDelete && (
-            <button
-              onClick={handleAddToCart}
-              className={`w-full py-3 px-6 rounded-lg flex items-center justify-center transition ${
-                isInCart
-                  ? "bg-gray-400 text-white "
-                  : "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600"
-              }`}
-              disabled={isInCart}
-            >
-              {isInCart ? (
-                <>
-                  <ShoppingCart className="w-5 h-5 mr-2" /> Товар в корзине
-                </>
-              ) : (
-                <>
-                  <ShoppingCart className="w-5 h-5 mr-2" /> Добавить в корзину
-                </>
-              )}
-            </button>
-          )}
-
-          {onEdit && (
-            <button
-              onClick={() => onEdit(product.id)}
-              className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm md:text-base transition"
-            >
-              Редактировать
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={() => onDelete(product.id)}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm md:text-base transition"
-            >
-              Удалить
-            </button>
-          )}
+          <span className="text-xs text-gray-500 ml-1">
+            ({product.rating || 0})
+          </span>
         </div>
       </div>
     </motion.div>

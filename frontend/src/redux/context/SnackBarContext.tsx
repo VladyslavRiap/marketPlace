@@ -1,5 +1,5 @@
-import React, { createContext, ReactNode, useContext, useState } from "react";
-import { SnackbarProvider, useSnackbar, VariantType } from "notistack";
+import React, { createContext, ReactNode, useContext } from "react";
+import { useSnackbar, VariantType } from "notistack";
 
 interface SnackbarContextType {
   showMessage: (message: string, variant: VariantType) => void;
@@ -19,7 +19,13 @@ export const SnackbarProviderWithContext: React.FC<
   const { enqueueSnackbar } = useSnackbar();
 
   const showMessage = (message: string, variant: VariantType) => {
-    enqueueSnackbar(message, { variant });
+    enqueueSnackbar(message, {
+      variant,
+
+      autoHideDuration: 2000,
+
+      preventDuplicate: true,
+    });
   };
 
   return (

@@ -1,98 +1,98 @@
-const UserModel = require("../models/UserModel");
+const UserService = require("../services/users.service");
 const uploadFile = require("../services/s3");
+const ERROR_MESSAGES = require("../constants/messageErrors");
+
 class UserController {
-  static async getCurrentUser(req, res) {
+  static async getCurrentUser(req, res, next) {
     try {
-      const user = await UserModel.findById(req.user.userId);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
+      const user = await UserService.findById(req.user.userId);
       res.json(user);
     } catch (error) {
-      console.error("Error fetching user:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
-  static async updateAvatar(req, res) {
-    if (!req.file) {
-      return res.status(400).json({ error: "Файл не загружен" });
-    }
 
+  static async updateAvatar(req, res, next) {
     try {
-      const folder = "avatars";
+      if (!req.file) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.FILE_NOT_UPLOADED,
+        });
+      }
+
       const uploadedImageUrl = await uploadFile(
         "marketplace-my-1-2-3-4",
         req.file.originalname,
         req.file.buffer
       );
 
-      await UserModel.updateUserAvatar(req.user.userId, uploadedImageUrl);
+      await UserService.updateAvatar(req.user.userId, uploadedImageUrl);
       res.json({ avatarUrl: uploadedImageUrl });
     } catch (error) {
-      console.error("Ошибка загрузки аватара:", error);
-      res.status(500).json({ error: "Ошибка загрузки аватара" });
+      next(error);
     }
   }
 
-  static async updateMobileNumber(req, res) {
+  static async updateMobileNumber(req, res, next) {
     const { mobnumber } = req.body;
 
-    if (!mobnumber) {
-      return res.status(400).json({ error: "Mobile number is required" });
-    }
-
     try {
-      const updatedUser = await UserModel.updateUserMobNumber(
+      if (!mobnumber) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.MOBILE_NUMBER_REQUIRED,
+        });
+      }
+
+      const updatedUser = await UserService.updateMobileNumber(
         req.user.userId,
         mobnumber
       );
       res.json(updatedUser);
     } catch (error) {
-      console.error("Error updating mobile number:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
-  static async updateUserProfile(req, res) {
+
+  static async updateUserProfile(req, res, next) {
     const { name } = req.body;
 
-    if (!name) {
-      return res.status(400).json({ error: "Name is required" });
-    }
-
     try {
-      const updatedUser = await UserModel.updateUserName(req.user.userId, name);
+      if (!name) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.NAME_REQUIRED,
+        });
+      }
+
+      const updatedUser = await UserService.updateName(req.user.userId, name);
       res.json(updatedUser);
     } catch (error) {
-      console.error("Error updating user profile:", error.message);
-      res.status(500).json({ error: "Server error" });
+      next(error);
     }
   }
 
-  static async changePassword(req, res) {
+  static async changePassword(req, res, next) {
     const { oldPassword, newPassword } = req.body;
 
     try {
-      const result = await UserModel.updatePassword(
+      const result = await UserService.changePassword(
         req.user.userId,
         oldPassword,
         newPassword
       );
       res.json(result);
     } catch (error) {
-      console.error("Error changing password:", error.message);
-      res.status(400).json({ error: error.message });
+      next(error);
     }
   }
 
-  static async register(req, res) {
+  static async register(req, res, next) {
     const { email, password, role = "buyer" } = req.body;
 
     try {
-      const user = await UserModel.createUser(email, password, role);
+      const user = await UserService.register(email, password, role);
       res.status(201).json(user);
     } catch (error) {
-      console.error("Error during registration:", error.message);
-      res.status(400).json({ error: error.message });
+      next(error);
     }
   }
 }

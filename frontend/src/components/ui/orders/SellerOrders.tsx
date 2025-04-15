@@ -9,8 +9,17 @@ import {
   FaCalendarAlt,
   FaMapMarkerAlt,
   FaClock,
+  FaTimes,
 } from "react-icons/fa";
 import api from "@/utils/api";
+import {
+  CONFIRM_CANCEL_MODAL_ID,
+  CONFIRM_STATUS_MODAL_ID,
+  useModal,
+} from "@/redux/context/ModalContext";
+import Button from "@/components/Button";
+import { motion } from "framer-motion";
+import StatusBadge from "./OrderStatus";
 
 interface OrderItem {
   product_id: number;
@@ -26,6 +35,11 @@ interface Order {
   id: number;
   user_id: number;
   delivery_address: string;
+  phone: string;
+  first_name: string;
+  last_name: string;
+  city: string;
+  region: string;
   created_at: string;
   estimated_delivery_date: string;
   items: OrderItem[];
@@ -37,21 +51,15 @@ interface SellerOrdersProps {
 
 const SellerOrders: React.FC<SellerOrdersProps> = ({ orders }) => {
   const router = useRouter();
-  const [updatingOrder, setUpdatingOrder] = useState<number | null>(null);
-  const [cancellingOrder, setCancellingOrder] = useState<number | null>(null);
-  const [activeProduct, setActiveProduct] = useState<number | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
-
+  const { openModal } = useModal();
   const statusSteps = [
-    { key: "registered", label: "Зарегистрирован", icon: <FaClipboardList /> },
-    { key: "paid", label: "Оплачен", icon: <FaCheckCircle /> },
-    { key: "prepared", label: "Подготовлен", icon: <FaBoxOpen /> },
-    { key: "shipped", label: "Отправлен", icon: <FaTruck /> },
-    { key: "in_transit", label: "В пути", icon: <FaTruck /> },
-    { key: "delivered", label: "Доставлен", icon: <FaCheckCircle /> },
-    { key: "received", label: "Получен", icon: <FaCheckCircle /> },
+    { key: "registered", label: "Registered", icon: <FaClipboardList /> },
+    { key: "paid", label: "Paid", icon: <FaCheckCircle /> },
+    { key: "prepared", label: "Prepared", icon: <FaBoxOpen /> },
+    { key: "shipped", label: "Shipped", icon: <FaTruck /> },
+    { key: "in_transit", label: "In Transit", icon: <FaTruck /> },
+    { key: "delivered", label: "Delivered", icon: <FaCheckCircle /> },
+    { key: "received", label: "Received", icon: <FaCheckCircle /> },
   ];
 
   const getNextStatus = (currentStatus: string) => {
@@ -63,250 +71,206 @@ const SellerOrders: React.FC<SellerOrdersProps> = ({ orders }) => {
     return ["registered", "paid", "prepared"].includes(status);
   };
 
-  const handleStatusUpdate = async () => {
-    if (!updatingOrder || !activeProduct) return;
-
-    try {
-      const { data: current } = await api.get(
-        `/orders/${updatingOrder}/items/${activeProduct}`
-      );
-      const nextStatus = getNextStatus(current.status);
-
-      if (!nextStatus) return;
-
-      await api.put("/orders/status", {
-        orderId: updatingOrder,
-        productId: activeProduct,
-        status: nextStatus.key,
-      });
-      router.replace(router.asPath);
-    } catch (error) {
-      console.error("Update error:", error);
-    } finally {
-      setUpdatingOrder(null);
-      setActiveProduct(null);
-      setShowConfirm(false);
-    }
+  const showStatusConfirmation = (
+    orderId: number,
+    productId: number,
+    currentStatus: string
+  ) => {
+    openModal(CONFIRM_STATUS_MODAL_ID, {
+      orderId,
+      productId,
+      currentStatus,
+    });
   };
 
-  const handleCancel = async () => {
-    if (!cancellingOrder || !activeProduct) return;
-
-    try {
-      await api.put("/orders/status", {
-        orderId: cancellingOrder,
-        productId: activeProduct,
-        status: "cancelled_by_seller",
-        cancelReason: cancelReason || "Отменен продавцом",
-      });
-      router.replace(router.asPath);
-    } catch (error) {
-      console.error("Cancel error:", error);
-    } finally {
-      setCancellingOrder(null);
-      setActiveProduct(null);
-      setCancelReason("");
-      setShowCancelConfirm(false);
-    }
+  const showCancelConfirmation = (orderId: number, productId: number) => {
+    openModal(CONFIRM_CANCEL_MODAL_ID, {
+      orderId,
+      productId,
+      cancelType: "seller",
+    });
   };
 
   return (
-    <div className="space-y-6">
-      <Transition show={showConfirm}>
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-lg font-medium mb-4">
-              Подтверждение изменения статуса
-            </h3>
-            <p>Вы действительно хотите изменить статус товара в заказе?</p>
-            <div className="mt-4 flex justify-end space-x-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 border rounded hover:bg-gray-100"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={handleStatusUpdate}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                disabled={updatingOrder !== null}
-              >
-                {updatingOrder ? "Обновление..." : "Подтвердить"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-
-      <Transition show={showCancelConfirm}>
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-lg font-medium mb-4">
-              Подтверждение отмены заказа
-            </h3>
-            <p className="mb-2">
-              Вы действительно хотите отменить этот товар в заказе?
-            </p>
-            <textarea
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Причина отмены (необязательно)"
-              className="w-full p-2 border rounded mb-4"
-              rows={3}
-            />
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowCancelConfirm(false);
-                  setCancelReason("");
-                }}
-                className="px-4 py-2 border rounded hover:bg-gray-100"
-              >
-                Нет
-              </button>
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                disabled={cancellingOrder !== null}
-              >
-                {cancellingOrder ? "Отмена..." : "Да, отменить"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-
-      {orders.map((order) => (
-        <div
-          key={order.id}
-          className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-        >
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Заказ №{order.id}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <FaCalendarAlt className="text-gray-500" />
-              <p className="text-gray-600">
-                Создан: {new Date(order.created_at).toLocaleDateString()}
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FaMapMarkerAlt className="text-gray-500" />
-              <p className="text-gray-600">Адрес: {order.delivery_address}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FaClock className="text-gray-500" />
-              <p className="text-gray-600">
-                Ожидаемая доставка:{" "}
-                {new Date(order.estimated_delivery_date).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {order.items.map((item) => {
-              const nextStatus = getNextStatus(item.status);
-              const canCancelItem = canCancel(item.status);
-              const isUpdating =
-                updatingOrder === order.id && activeProduct === item.product_id;
-              const isCancelling =
-                cancellingOrder === order.id &&
-                activeProduct === item.product_id;
-              const isCancelled = item.status.includes("cancelled");
-
-              return (
-                <div
-                  key={item.product_id}
-                  className="flex items-center justify-between bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <div className="flex items-center space-x-4">
-                    {item.images?.length > 0 && (
-                      <img
-                        src={item.images[0]}
-                        alt={item.product_name}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                    )}
-                    <div>
-                      <p className="text-lg font-medium">{item.product_name}</p>
-                      <p className="text-gray-500 text-sm">
-                        Количество: {item.quantity} × ${item.price} = $
-                        {(item.quantity * item.price).toFixed(2)}
-                      </p>
-                      <p
-                        className={`text-sm mt-1 ${
-                          isCancelled ? "text-red-600" : "text-gray-600"
-                        }`}
-                      >
-                        Статус:{" "}
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded ${
-                            item.status === "cancelled_by_buyer"
-                              ? "bg-red-100 text-red-800"
-                              : item.status === "cancelled_by_seller"
-                              ? "bg-orange-100 text-orange-800"
-                              : item.status.includes("cancelled")
-                              ? "bg-gray-100 text-gray-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {item.status === "cancelled_by_buyer"
-                            ? "Отменен покупателем"
-                            : item.status === "cancelled_by_seller"
-                            ? "Отменен продавцом"
-                            : item.status.includes("cancelled")
-                            ? "Отменен"
-                            : item.status}
-                          {item.cancel_reason && ` (${item.cancel_reason})`}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2">
-                    {!isCancelled && nextStatus && (
-                      <button
-                        onClick={() => {
-                          setUpdatingOrder(order.id);
-                          setActiveProduct(item.product_id);
-                          setShowConfirm(true);
-                        }}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center space-x-1"
-                        disabled={isUpdating || isCancelling}
-                      >
-                        {isUpdating ? (
-                          <span>...</span>
-                        ) : (
-                          <>
-                            <span>{nextStatus.icon}</span>
-                            <span>{nextStatus.label}</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-
-                    {!isCancelled && canCancelItem && (
-                      <button
-                        onClick={() => {
-                          setCancellingOrder(order.id);
-                          setActiveProduct(item.product_id);
-                          setShowCancelConfirm(true);
-                        }}
-                        className="px-3 py-1 bg-red-100 text-red-800 rounded text-sm hover:bg-red-200"
-                        disabled={isUpdating || isCancelling}
-                      >
-                        Отменить
-                      </button>
-                    )}
+    <div className="space-y-4 p-2 sm:p-0">
+      {orders
+        .slice()
+        .reverse()
+        .map((order) => (
+          <motion.div
+            key={order.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+          >
+            <div className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Order #{order.id}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                    <FaCalendarAlt className="text-gray-400" />
+                    <span>
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <FaClock className="text-gray-400" />
+                  <span>
+                    Delivery:{" "}
+                    {new Date(
+                      order.estimated_delivery_date
+                    ).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 mb-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-700 mb-3">
+                    Customer Information
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-gray-200 p-2 rounded-full">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5 text-gray-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">
+                          {order.first_name} {order.last_name}
+                        </p>
+                        <p className="text-sm text-gray-500">{order.phone}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-gray-200 p-2 rounded-full">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5 text-gray-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 line-clamp-2">
+                          {order.delivery_address}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {order.city}, {order.region}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {order.items.map((item) => {
+                  const nextStatus = getNextStatus(item.status);
+                  const isCancelled = item.status.includes("cancelled");
+
+                  return (
+                    <div
+                      key={item.product_id}
+                      className="flex flex-col sm:flex-row gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      {item.images?.[0] && (
+                        <div className="flex-shrink-0 w-full sm:w-20 sm:h-20 h-40 rounded-lg overflow-hidden border border-gray-200">
+                          <img
+                            src={item.images[0]}
+                            alt={item.product_name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <h4 className="font-medium text-gray-900">
+                            {item.product_name}
+                          </h4>
+                        </div>
+                        <p className="text-sm text-gray-500 mb-2">
+                          {item.quantity} × ${item.price.toFixed(2)}
+                        </p>
+                        <p className="text-sm font-medium  text-gray-900">
+                          total: ${(item.quantity * item.price).toFixed(2)}
+                        </p>
+                        <StatusBadge
+                          status={item.status}
+                          cancelReason={item.cancel_reason}
+                        />
+                      </div>
+                      {!isCancelled && nextStatus && (
+                        <div className="flex flex-row gap-2 self-center">
+                          <Button
+                            variant="primary"
+                            size="md"
+                            onClick={() =>
+                              showStatusConfirmation(
+                                order.id,
+                                item.product_id,
+                                item.status
+                              )
+                            }
+                            className="whitespace-nowrap"
+                          >
+                            {nextStatus.label}
+                          </Button>
+                          {canCancel(item.status) && (
+                            <Button
+                              variant="secondary"
+                              size="md"
+                              iconPosition="right"
+                              className="text-red-500 hover:text-red-700 hover:border-red-900"
+                              onClick={() =>
+                                showCancelConfirmation(
+                                  order.id,
+                                  item.product_id
+                                )
+                              }
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        ))}
     </div>
   );
 };

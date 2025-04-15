@@ -11,11 +11,13 @@ interface CategorySelectorProps {
   subcategoryId: number;
   onCategoryChange: (categoryId: number) => void;
   onSubcategoryChange: (subcategoryId: number) => void;
+  required?: boolean;
 }
 
 const CategorySelector: React.FC<CategorySelectorProps> = ({
   categoryId,
   subcategoryId,
+  required = false,
   onCategoryChange,
   onSubcategoryChange,
 }) => {
@@ -44,14 +46,14 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700">
-        Категория
+        Category
       </label>
       <select
         value={categoryId}
         onChange={(e) => onCategoryChange(parseInt(e.target.value, 10))}
         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
       >
-        <option value={0}>Выберите категорию</option>
+        <option value={0}>Choose category</option>
         {categories.map((category) => (
           <option key={category.id} value={category.id}>
             {category.name}
@@ -60,15 +62,16 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       </select>
 
       <label className="block text-sm font-medium text-gray-700 mt-4">
-        Подкатегория
+        Subcatery
       </label>
       <select
         value={subcategoryId}
         onChange={(e) => onSubcategoryChange(parseInt(e.target.value, 10))}
         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         disabled={!categoryId}
+        required
       >
-        <option value={0}>Выберите подкатегорию</option>
+        <option value={0}>Choose Subcategory</option>
         {subcategories.map((subcategory) => (
           <option key={subcategory.id} value={subcategory.id}>
             {subcategory.name}

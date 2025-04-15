@@ -5,9 +5,17 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { searchProducts } from "@/redux/slices/productsSlice";
 import ProductList from "@/components/ProductList";
 import api from "@/utils/api";
-import { Product } from "@/redux/slices/productsSlice";
+
 import SortSelect from "@/components/ui/filters/SortSelect";
 import { useUpdateQueryParams } from "@/utils/useUpdateQueryParams";
+import { Search } from "lucide-react";
+import Head from "next/head";
+import { addToCart } from "@/redux/slices/cartSlice";
+import {
+  addToFavorites,
+  removeFromFavorites,
+} from "@/redux/slices/favoriteSlice";
+import { Product } from "../../../types/product";
 
 interface SearchPageProps {
   initialProducts: Product[];
@@ -69,7 +77,8 @@ const SearchPage: React.FC<SearchPageProps> = ({
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [currentPage, setCurrentPage] = useState(initialCurrentPage);
-
+  const { items: cartItems } = useAppSelector((state) => state.cart);
+  const { favorites } = useAppSelector((state) => state.favorite);
   const [sortBy, setSortBy] = useState<string>(
     Array.isArray(router.query.sortBy)
       ? router.query.sortBy[0]
@@ -111,61 +120,87 @@ const SearchPage: React.FC<SearchPageProps> = ({
     }
   };
 
-  useEffect(() => {
-    const newSortBy = Array.isArray(router.query.sortBy)
-      ? router.query.sortBy[0]
-      : router.query.sortBy || "name";
-    const newOrder = Array.isArray(router.query.order)
-      ? router.query.order[0]
-      : router.query.order || "asc";
+  const handleAddToCart = (product: Product) => {
+    dispatch(addToCart(product.id));
+  };
 
-    if (newSortBy !== sortBy) {
-      setSortBy(newSortBy);
+  const handleToggleFavorite = (product: Product) => {
+    const isFavorite = favorites.some((fav) => fav.id === product.id);
+    if (isFavorite) {
+      dispatch(removeFromFavorites(product.id));
+    } else {
+      dispatch(addToFavorites(product.id));
     }
-    if (newOrder !== order) {
-      setOrder(newOrder);
-    }
-  }, [router.query.sortBy, router.query.order]);
+  };
 
-  useEffect(() => {
-    updateQueryParams({ sortBy, order, page: currentPage, query });
-  }, [sortBy, order, currentPage, query]);
+  const isInCart = (productId: number) => {
+    return cartItems.some((item) => item.id === productId);
+  };
+
+  const isFavorite = (productId: number) => {
+    return favorites.some((fav) => fav.id === productId);
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">Search Results</h1>
+    <>
+      <Head>
+        <title>Search results: {query}</title>
+        <meta name="description" content={`Search results for ${query}`} />
+      </Head>
 
-      <div className="flex flex-wrap gap-6 mb-8 justify-between bg-white p-6 rounded-xl shadow-lg">
-        <SortSelect
-          value={sortBy}
-          onChange={setSortBy}
-          options={[
-            { value: "name", label: "Name" },
-            { value: "price", label: "Price" },
-            { value: "rating", label: "Rating" },
-          ]}
-          placeholder="Sort By"
-        />
+      <div className="container mx-auto px-4 py-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center mb-6">
+            <Search className="w-6 h-6 text-gray-500 mr-2" />
+            <h1 className="text-2xl font-bold text-gray-800">
+              Search results: "{query}"
+            </h1>
+          </div>
 
-        <SortSelect
-          value={order}
-          onChange={setOrder}
-          options={[
-            { value: "asc", label: "Ascending" },
-            { value: "desc", label: "Descending" },
-          ]}
-          placeholder="Order"
-        />
+          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div className="flex flex-row gap-4 justify-between items-center">
+              <div className="w-full sm:w-auto">
+                <SortSelect
+                  value={sortBy}
+                  onChange={setSortBy}
+                  options={[
+                    { value: "name", label: "By name" },
+                    { value: "price", label: "By price" },
+                    { value: "rating", label: "By rating" },
+                  ]}
+                  placeholder="Sort by"
+                />
+              </div>
+
+              <div className="w-full sm:w-auto">
+                <SortSelect
+                  value={order}
+                  onChange={setOrder}
+                  options={[
+                    { value: "asc", label: "Ascending" },
+                    { value: "desc", label: "Descending" },
+                  ]}
+                  placeholder="Order"
+                />
+              </div>
+            </div>
+          </div>
+
+          <ProductList
+            products={products}
+            status={status}
+            totalPages={totalPages}
+            currentPage={Number(router.query.page) || 1}
+            onPageChange={handlePageChange}
+            cardSize="medium"
+            onAddToCart={handleAddToCart}
+            onToggleFavorite={handleToggleFavorite}
+            isInCart={isInCart}
+            isFavorite={isFavorite}
+          />
+        </div>
       </div>
-
-      <ProductList
-        products={products}
-        status={status}
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-      />
-    </div>
+    </>
   );
 };
 

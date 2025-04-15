@@ -1,61 +1,95 @@
 import { GetServerSideProps } from "next";
 import { motion } from "framer-motion";
-
-import api from "@/utils/api";
+import { ShoppingBag, Package, User } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { fetchOrders } from "@/redux/slices/orderSlice";
+import EmptyState from "@/components/EmptyState";
 import SellerOrders from "@/components/ui/orders/SellerOrders";
 import BuyerOrders from "@/components/ui/orders/BuyerOrders";
+import { useEffect } from "react";
+import api from "@/utils/api";
 
-interface OrderItem {
-  product_id: number;
-  product_name: string;
-  quantity: number;
-  price: number;
-  status: string;
-  images: string[];
-  seller_id?: number;
-  cancel_reason?: string;
-}
+const OrdersPage: React.FC<{ userRole: string }> = ({ userRole = "buyer" }) => {
+  const dispatch = useAppDispatch();
+  const { orders, loading } = useAppSelector((state) => state.orders);
+  const isSeller = userRole === "seller";
 
-export interface Order {
-  id: number;
-  user_id: number;
-  delivery_address: string;
-  created_at: string;
-  estimated_delivery_date: string;
-  items: OrderItem[];
-  status: string;
-  images: string[];
-}
+  useEffect(() => {
+    dispatch(fetchOrders(userRole as "buyer" | "seller"));
+  }, [dispatch, userRole]);
 
-interface OrdersPageProps {
-  orders: Order[];
-  userRole: string;
-}
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        Loading...
+      </div>
+    );
+  }
 
-const OrdersPage: React.FC<OrdersPageProps> = ({
-  orders = [],
-  userRole = "buyer",
-}) => {
   return (
-    <div className="p-6 min-h-screen bg-gray-100">
-      <motion.h1
-        className="text-3xl font-bold text-gray-800 text-center mb-6"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {userRole === "seller" ? "Заказы покупателей" : "Мои заказы"}
-      </motion.h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-6">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex items-center justify-between"
+          >
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
+              {isSeller ? (
+                <>
+                  <Package className="w-7 h-7 text-indigo-600" />
+                  Customer Orders
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-7 h-7 text-indigo-600" />
+                  My Orders
+                </>
+              )}
+            </h1>
+            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full">
+              <User className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                {isSeller ? "Seller" : "Buyer"}
+              </span>
+            </div>
+          </motion.div>
+        </div>
+      </div>
 
-      {orders.length === 0 ? (
-        <p className="text-center text-gray-600">
-          {userRole === "seller" ? "Нет заказов" : "У вас нет заказов"}
-        </p>
-      ) : userRole === "seller" ? (
-        <SellerOrders orders={orders} />
-      ) : (
-        <BuyerOrders orders={orders} />
-      )}
+      <div className="container mx-auto px-4 py-6">
+        {orders.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <EmptyState
+              icon={<ShoppingBag className="w-12 h-12 text-gray-400" />}
+              title={isSeller ? "No orders" : "You have no orders"}
+              description={
+                isSeller
+                  ? "Orders for your products will be displayed here"
+                  : "Start shopping to see your orders here"
+              }
+              action={
+                !isSeller
+                  ? {
+                      label: "Go to Products",
+                      href: "/products",
+                    }
+                  : undefined
+              }
+            />
+          </motion.div>
+        ) : isSeller ? (
+          <SellerOrders orders={orders} />
+        ) : (
+          <BuyerOrders orders={orders} />
+        )}
+      </div>
     </div>
   );
 };

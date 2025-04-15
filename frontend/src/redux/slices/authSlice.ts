@@ -34,7 +34,7 @@ export const registerUser = createAsyncThunk(
       return userResponse;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка регистрации"
+        error.response?.data?.error || "Registration error"
       );
     }
   }
@@ -52,7 +52,7 @@ export const loginUser = createAsyncThunk(
       await dispatch(fetchUser());
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || "Ошибка входа");
+      return rejectWithValue(error.response?.data?.error || "Login error");
     }
   }
 );
@@ -65,10 +65,10 @@ export const fetchUser = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
-        return rejectWithValue("Пользователь не найден, но не разлогиниваем!");
+        return rejectWithValue("User not found");
       }
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка загрузки профиля"
+        error.response?.data?.error || "Profile loading error"
       );
     }
   }
@@ -85,7 +85,7 @@ export const updateName = createAsyncThunk(
       const { data } = await api.put("/users/me", { name });
       return data;
     } catch (error: any) {
-      return rejectWithValue(error.message || "Ошибка при обновлении имени");
+      return rejectWithValue(error.message || "Error updating name");
     }
   }
 );
@@ -99,7 +99,7 @@ export const updatePhone = createAsyncThunk(
       });
       return data;
     } catch (error: any) {
-      return rejectWithValue(error.message || "Ошибка при обновлении телефона");
+      return rejectWithValue(error.message || "Error updating phone number");
     }
   }
 );
@@ -117,7 +117,7 @@ export const updatePassword = createAsyncThunk(
       });
       return data;
     } catch (error: any) {
-      return rejectWithValue(error.message || "Ошибка при обновлении пароля");
+      return rejectWithValue(error.message || "Error updating password");
     }
   }
 );
@@ -131,7 +131,7 @@ export const updateAvatar = createAsyncThunk(
       });
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.message || "Ошибка при загрузке аватара");
+      return rejectWithValue(error.message || "Error uploading avatar");
     }
   }
 );

@@ -2,17 +2,26 @@ import ProductModal from "@/components/ui/modals/ProductModal";
 import ReviewModal from "@/components/ui/modals/ReviewModal";
 import AddsModal from "@/components/ui/modals/AddsModal";
 import { createContext, ReactNode, useContext, useState } from "react";
-import CheckoutModal from "@/components/ui/modals/CheckoutModal";
+import ConfirmCancelModal from "@/components/ui/modals/ConfirmCancelModal";
+import ConfirmStatusModal from "@/components/ui/modals/ConfirmStatusModal";
+import ClearCartModal from "@/components/ui/modals/ClearCartModal";
+import LogoutModal from "@/components/ui/profile/LogoutModal";
 
 export const PRODUCT_MODAL_ID = "productModal";
 export const REVIEW_MODAL_ID = "reviewModal";
 export const ADD_AD_MODAL_ID = "addsModal";
-export const CHECKOUT_MODAL_ID = "checkoutModal";
+export const CLEAR_CART_MODAL = "checkoutModal";
+export const CONFIRM_CANCEL_MODAL_ID = "confirmCancelModal";
+export const CONFIRM_STATUS_MODAL_ID = "confirmStatusModal";
+export const LOGOUT_MODAL_ID = "logoutModal";
 export const modalsLookUp: { [key: string]: React.FC<any> } = {
   [PRODUCT_MODAL_ID]: ProductModal,
   [REVIEW_MODAL_ID]: ReviewModal,
   [ADD_AD_MODAL_ID]: AddsModal,
-  [CHECKOUT_MODAL_ID]: CheckoutModal,
+  [CLEAR_CART_MODAL]: ClearCartModal,
+  [CONFIRM_CANCEL_MODAL_ID]: ConfirmCancelModal,
+  [CONFIRM_STATUS_MODAL_ID]: ConfirmStatusModal,
+  [LOGOUT_MODAL_ID]: LogoutModal,
 };
 
 interface ModalContextValue {
@@ -42,15 +51,6 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
     setModal((prev) => prev.filter((modal) => modal.name !== name));
   };
 
-  const handleOverlayClick = (
-    e: React.MouseEvent<HTMLDivElement>,
-    name: string
-  ) => {
-    if ((e.target as HTMLElement).id === "overlay") {
-      closeModal(name);
-    }
-  };
-
   return (
     <ModalContext.Provider value={{ modal, openModal, closeModal }}>
       {children}
@@ -60,7 +60,11 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
           <div
             id="overlay"
             key={index}
-            onClick={(e) => handleOverlayClick(e, modal.name)}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                closeModal(modal.name);
+              }
+            }}
             style={{
               position: "fixed",
               top: 0,

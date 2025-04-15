@@ -32,7 +32,25 @@ export const fetchCart = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка при загрузке корзины"
+        error.response?.data?.error || "Error loading cart"
+      );
+    }
+  }
+);
+
+export const addMultipleToCart = createAsyncThunk(
+  "cart/addMultipleToCart",
+  async (productIds: number[], { rejectWithValue }) => {
+    try {
+      await Promise.all(
+        productIds.map((productId) => api.post("/cart", { productId }))
+      );
+
+      const response = await api.get("/cart");
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error || "Error adding products to cart"
       );
     }
   }
@@ -40,13 +58,14 @@ export const fetchCart = createAsyncThunk(
 
 export const addToCart = createAsyncThunk(
   "cart/addToCart",
-  async (productId: number, { rejectWithValue }) => {
+  async (productId: number, { rejectWithValue, dispatch }) => {
     try {
-      const response = await api.post("/cart", { productId });
+      await api.post("/cart", { productId });
+      const response = await api.get("/cart");
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка при добавлении в корзину"
+        error.response?.data?.error || "Error adding to cart"
       );
     }
   }
@@ -61,7 +80,7 @@ export const removeFromCart = createAsyncThunk(
       return productId;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка при удалении товара из корзины"
+        error.response?.data?.error || "Error removing product from cart"
       );
     }
   }
@@ -84,7 +103,7 @@ export const updateCartQuantity = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка при обновлении количества товара"
+        error.response?.data?.error || "Error updating product quantity"
       );
     }
   }
@@ -98,7 +117,7 @@ export const clearCart = createAsyncThunk(
       return [];
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.error || "Ошибка при очистке корзины"
+        error.response?.data?.error || "Error clearing cart"
       );
     }
   }
@@ -126,9 +145,18 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+      .addCase(addToCart.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(addToCart.fulfilled, (state, action) => {
-        state.items.push(action.payload);
-        state.totalAmount += action.payload.total_price;
+        state.loading = false;
+        state.items = action.payload.items;
+        state.totalAmount = action.payload.totalAmount;
+      })
+      .addCase(addToCart.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       })
       .addCase(removeFromCart.fulfilled, (state, action) => {
         state.items = state.items.filter((item) => item.id !== action.payload);
@@ -147,6 +175,19 @@ const cartSlice = createSlice({
       .addCase(clearCart.fulfilled, (state) => {
         state.items = [];
         state.totalAmount = 0;
+      })
+      .addCase(addMultipleToCart.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addMultipleToCart.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload.items;
+        state.totalAmount = action.payload.totalAmount;
+      })
+      .addCase(addMultipleToCart.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });

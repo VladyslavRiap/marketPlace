@@ -12,7 +12,13 @@ import Layout from "@/components/ui/layout/Layout";
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <Provider store={store}>
-      <SnackbarProvider maxSnack={3}>
+      <SnackbarProvider
+        maxSnack={3}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+      >
         <SnackbarProviderWithContext>
           <ModalProvider>
             <AppInitializer>

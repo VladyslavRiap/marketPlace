@@ -34,7 +34,11 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *         description: Server error
  */
 router.get("/", authMiddleware, notificationController.getNotifications);
-
+router.get(
+  "/unread-count",
+  authMiddleware,
+  notificationController.getUnreadCount
+);
 /**
  * @swagger
  * /api/notifications/{id}/read:

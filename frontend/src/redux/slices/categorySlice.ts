@@ -27,9 +27,7 @@ export const fetchCategories = createAsyncThunk(
       const { data } = await api.get("/products/categories");
       return data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data || "Ошибка при загрузке категорий"
-      );
+      return rejectWithValue(error.response?.data || "Error at category level");
     }
   }
 );
@@ -44,7 +42,7 @@ export const fetchSubcategories = createAsyncThunk(
       return { categoryId, subcategories: data };
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data || "Ошибка при загрузке подкатегорий"
+        error.response?.data || "Error at subcategory level"
       );
     }
   }
