@@ -14,7 +14,12 @@ import Button from "@/components/Button";
 const RegisterPage = () => {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "buyer",
+  });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
     name: false,
@@ -174,7 +179,66 @@ const RegisterPage = () => {
                 />
               </div>
             </div>
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
+              <div className="flex gap-4">
+                <label className="inline-flex items-center">
+                  <div className="relative flex items-center">
+                    <input
+                      type="radio"
+                      className="sr-only"
+                      name="role"
+                      value="buyer"
+                      checked={form.role === "buyer"}
+                      onChange={(e) =>
+                        setForm({ ...form, role: e.target.value })
+                      }
+                    />
+                    <div
+                      className={`w-5 h-5 rounded-full border ${
+                        form.role === "buyer"
+                          ? "border-[#DB4444]"
+                          : "border-gray-400"
+                      } flex items-center justify-center`}
+                    >
+                      {form.role === "buyer" && (
+                        <div className="w-3 h-3 rounded-full bg-[#DB4444]"></div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="ml-2 text-gray-700">Buyer</span>
+                </label>
 
+                <label className="inline-flex items-center">
+                  <div className="relative flex items-center">
+                    <input
+                      type="radio"
+                      className="sr-only"
+                      name="role"
+                      value="seller"
+                      checked={form.role === "seller"}
+                      onChange={(e) =>
+                        setForm({ ...form, role: e.target.value })
+                      }
+                    />
+                    <div
+                      className={`w-5 h-5 rounded-full border ${
+                        form.role === "seller"
+                          ? "border-[#DB4444]"
+                          : "border-gray-400"
+                      } flex items-center justify-center`}
+                    >
+                      {form.role === "seller" && (
+                        <div className="w-3 h-3 rounded-full bg-[#DB4444]"></div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="ml-2 text-gray-700">Seller</span>
+                </label>
+              </div>
+            </div>
             <Button
               type="submit"
               variant="secondary"

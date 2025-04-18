@@ -1,25 +1,37 @@
 import { Star } from "lucide-react";
-
-import Button from "@/components/Button";
-import { Product, ProductAttribute, Review } from "../../../../types/prod";
+import { Product, Review } from "../../../../types/prod";
 
 interface ProductInfoProps {
   product: Product;
   reviews: Review[];
-  colorAttributes: ProductAttribute[];
-  sizeAttributes: ProductAttribute[];
   selectedImage: string;
   setSelectedImage: (image: string) => void;
+  selectedColorId: number | null;
+  setSelectedColorId: (id: number | null) => void;
+  selectedSizeId: number | null;
+  setSelectedSizeId: (id: number | null) => void;
 }
 
 export const ProductInfo = ({
   product,
   reviews,
-  colorAttributes,
-  sizeAttributes,
   selectedImage,
   setSelectedImage,
+  selectedColorId,
+  setSelectedColorId,
+  selectedSizeId,
+  setSelectedSizeId,
 }: ProductInfoProps) => {
+  const handleColorSelect = (colorId: number, colorName: string) => {
+    setSelectedColorId(colorId);
+
+    const colorImage = product.images.find((img) =>
+      img.toLowerCase().includes(colorName.toLowerCase())
+    );
+
+    if (colorImage) setSelectedImage(colorImage);
+  };
+
   return (
     <div className="flex flex-col gap-6 text-sm text-gray-700">
       <div>
@@ -55,47 +67,49 @@ export const ProductInfo = ({
         </span>
       </div>
 
-      {colorAttributes.length > 0 && (
+      {product.colors && product.colors.length > 0 && (
         <div>
           <div className="font-medium mb-2">Color:</div>
           <div className="flex gap-2">
-            {colorAttributes.map((attr) => (
+            {product.colors.map((color) => (
               <button
-                key={attr.attribute_id}
-                className={`w-7 h-7 rounded-full border-2 transition-all ${
-                  selectedImage.includes(attr.attribute_value.toLowerCase())
-                    ? "border-[#DB4444]"
-                    : "border-gray-200"
-                }`}
-                style={{ backgroundColor: attr.attribute_value }}
-                title={attr.attribute_value}
-                onClick={() => {
-                  const colorImage = product.images.find((img) =>
-                    img
-                      .toLowerCase()
-                      .includes(attr.attribute_value.toLowerCase())
-                  );
-                  if (colorImage) setSelectedImage(colorImage);
-                }}
-              />
+                key={color.id}
+                onClick={() => handleColorSelect(color.id, color.name)}
+                className={`w-8 h-8 rounded-full border transition-all flex items-center justify-center 
+                  ${
+                    selectedColorId === color.id
+                      ? "border-2 border-[#DB4444]"
+                      : "border border-gray-300"
+                  }`}
+              >
+                <div
+                  className={`w-6 h-6 rounded-full`}
+                  style={{ backgroundColor: color.hex_code }}
+                  title={color.name}
+                />
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      {sizeAttributes.length > 0 && (
+      {product.sizes && product.sizes.length > 0 && (
         <div>
           <div className="font-medium mb-2">Size:</div>
           <div className="flex gap-2 flex-wrap">
-            {sizeAttributes.map((attr) => (
-              <Button
-                key={attr.attribute_id}
-                variant="secondary"
-                size="sm"
-                className="rounded-md px-3 py-1"
+            {product.sizes.map((size) => (
+              <button
+                key={size.id}
+                onClick={() => setSelectedSizeId(size.id)}
+                className={`px-3 py-1 rounded-md transition-all text-sm font-medium
+                  ${
+                    selectedSizeId === size.id
+                      ? "bg-[#DB4444] text-white"
+                      : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                  }`}
               >
-                {attr.attribute_value}
-              </Button>
+                {size.name}
+              </button>
             ))}
           </div>
         </div>

@@ -179,8 +179,8 @@ const OrderPage: React.FC<OrderPageProps> = ({ order }) => {
                         <div
                           className={`h-1.5 rounded-full ${
                             cancelled
-                              ? "bg-gradient-to-r from-red-500 to-red-400"
-                              : "bg-gradient-to-r from-blue-500 to-blue-400"
+                              ? "bg-gradient-to-r from-gray-500 to-gray-400"
+                              : "bg-gradient-to-r from-[#E07575]  to-[#DB4444]"
                           }`}
                           style={{
                             width: `${
@@ -205,8 +205,8 @@ const OrderPage: React.FC<OrderPageProps> = ({ order }) => {
                                 className={`p-2 rounded-full ${
                                   isActive
                                     ? cancelled
-                                      ? "bg-gradient-to-br from-red-500 to-red-400 text-white shadow-sm"
-                                      : "bg-gradient-to-br from-blue-500 to-blue-400 text-white shadow-sm"
+                                      ? "bg-gradient-to-br from-gray-500 to-gray-400 text-white shadow-sm"
+                                      : "bg-gradient-to-br  from-[#E07575]  to-[#DB4444] text-white shadow-sm"
                                     : "bg-gray-200 text-gray-500"
                                 }`}
                               >

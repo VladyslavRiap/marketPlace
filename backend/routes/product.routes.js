@@ -24,6 +24,21 @@ router.post("/:productId/attributes", productController.addProductAttributes);
 router.get("/discounted", productController.getDiscountedProducts);
 router.get("/top-selling", productController.getTopSellingProducts);
 router.get("/trending", productController.getTrendingProducts);
+router.get("/colors", productController.getColors);
+router.get("/sizes", productController.getSizes);
+
+router.post(
+  "/:productId/colors",
+  authMiddleware,
+  checkRole(["admin", "seller"]),
+  productController.addProductColors
+);
+router.post(
+  "/:productId/sizes",
+  authMiddleware,
+  checkRole(["admin", "seller"]),
+  productController.addProductSizes
+);
 /**
  * @swagger
  * /api/products:

@@ -3,11 +3,19 @@ const queries = require("../queries/cart.queries");
 const ERROR_MESSAGES = require("../constants/messageErrors");
 
 class CartService {
-  static async addToCart(userId, productId, quantity) {
+  static async addToCart(
+    userId,
+    productId,
+    quantity,
+    colorId = null,
+    sizeId = null
+  ) {
     const result = await pool.query(queries.ADD_TO_CART, [
       userId,
       productId,
       quantity,
+      colorId,
+      sizeId,
     ]);
     return result.rows[0];
   }

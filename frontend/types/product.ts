@@ -1,3 +1,14 @@
+export interface ProductColor {
+  id: number;
+  name: string;
+  hex_code?: string;
+}
+
+export interface ProductSize {
+  id: number;
+  name: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -13,6 +24,8 @@ export interface Product {
   view_count?: number;
   purchase_count?: number;
   attributes?: ProductAttribute[];
+  colors?: ProductColor[];
+  sizes?: ProductSize[];
   [key: string]: any;
 }
 

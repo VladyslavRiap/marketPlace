@@ -6,11 +6,10 @@ module.exports = {
 `,
 
   createOrderItem: `
-  INSERT INTO order_items (order_id, product_id, seller_id, quantity, price)
-  VALUES ($1, $2, $3, $4, $5)
+  INSERT INTO order_items (order_id, product_id, seller_id, quantity, price, color_id, size_id)
+  VALUES ($1, $2, $3, $4, $5, $6, $7)
   RETURNING *;
 `,
-
   updateProductStatus: `
     UPDATE order_items
     SET status = $1
@@ -79,6 +78,10 @@ WHERE
       'price', oi.price,
       'status', oi.status,
       'cancel_reason', oi.cancel_reason,
+      'color_id', oi.color_id,
+      'color_name', col.name,
+      'size_id', oi.size_id,
+      'size_name', s.name,
       'images', (
         SELECT json_agg(pi.image_url)
         FROM product_images pi
@@ -88,41 +91,49 @@ WHERE
   FROM orders o
   JOIN order_items oi ON o.id = oi.order_id
   JOIN products p ON oi.product_id = p.id
+  LEFT JOIN colors col ON oi.color_id = col.id
+  LEFT JOIN sizes s ON oi.size_id = s.id
   WHERE o.user_id = $1
   GROUP BY o.id
 `,
 
   GET_ORDERS_BY_SELLER: `
-  SELECT 
-    o.id, 
-    o.delivery_address, 
-    o.estimated_delivery_date, 
-    o.status, 
-    o.created_at, 
-    o.updated_at,
-    o.phone,
-    o.first_name,
-    o.last_name,
-    o.city,
-    o.region,
-    json_agg(json_build_object(
-      'product_id', oi.product_id,
-      'product_name', p.name,
-      'quantity', oi.quantity,
-      'price', oi.price,
-      'status', oi.status,
-      'cancel_reason', oi.cancel_reason,
-      'images', (
-        SELECT json_agg(pi.image_url)
-        FROM product_images pi
-        WHERE pi.product_id = p.id
-      )
-    )) AS items
-  FROM orders o
-  JOIN order_items oi ON o.id = oi.order_id
-  JOIN products p ON oi.product_id = p.id
-  WHERE p.user_id = $1
-  GROUP BY o.id
+SELECT 
+  o.id, 
+  o.delivery_address, 
+  o.estimated_delivery_date, 
+  o.status, 
+  o.created_at, 
+  o.updated_at,
+  o.phone,
+  o.first_name,
+  o.last_name,
+  o.city,
+  o.region,
+  json_agg(json_build_object(
+    'product_id', oi.product_id,
+    'product_name', p.name,
+    'quantity', oi.quantity,
+    'price', oi.price,
+    'status', oi.status,
+    'cancel_reason', oi.cancel_reason,
+    'color_id', oi.color_id,
+    'color_name', col.name,
+    'size_id', oi.size_id,
+    'size_name', s.name,
+    'images', (
+      SELECT json_agg(pi.image_url)
+      FROM product_images pi
+      WHERE pi.product_id = p.id
+    )
+  )) AS items
+FROM orders o
+JOIN order_items oi ON o.id = oi.order_id
+JOIN products p ON oi.product_id = p.id
+LEFT JOIN colors col ON oi.color_id = col.id
+LEFT JOIN sizes s ON oi.size_id = s.id
+WHERE p.user_id = $1
+GROUP BY o.id
 `,
 
   getOrderItems: `

@@ -2,8 +2,10 @@ import { useState } from "react";
 import PriceInput from "../filters/PriceInput";
 import ImageUploader from "@/components/ImageUploader";
 import CategorySelector from "../filters/CategorySelector";
+
 import Button from "@/components/Button";
 import { Loader2 } from "lucide-react";
+import ColorSizeSelector from "@/components/ColorSizeSelector";
 
 interface ProductFormProps {
   onSubmit: (formData: FormData) => void;
@@ -29,6 +31,12 @@ const ProductForm = ({
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>(
     initialProduct?.images || []
+  );
+  const [selectedColors, setSelectedColors] = useState<number[]>(
+    initialProduct?.colors?.map((c: any) => c.id) || []
+  );
+  const [selectedSizes, setSelectedSizes] = useState<number[]>(
+    initialProduct?.sizes?.map((s: any) => s.id) || []
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -64,6 +72,15 @@ const ProductForm = ({
     if (!isEditMode) {
       formData.append("subcategory_id", product.subcategory_id.toString());
     }
+
+    // Добавляем цвета и размеры в formData
+    selectedColors.forEach((colorId) => {
+      formData.append("colors[]", colorId.toString());
+    });
+
+    selectedSizes.forEach((sizeId) => {
+      formData.append("sizes[]", sizeId.toString());
+    });
 
     images.forEach((image) => {
       formData.append("images", image);
@@ -161,6 +178,18 @@ const ProductForm = ({
               Add new images to replace existing ones
             </p>
           )}
+        </div>
+
+        <div className="md:col-span-2 pt-4 border-t border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Product Variants
+          </h3>
+          <ColorSizeSelector
+            onColorsChange={setSelectedColors}
+            onSizesChange={setSelectedSizes}
+            initialColors={selectedColors}
+            initialSizes={selectedSizes}
+          />
         </div>
       </div>
 

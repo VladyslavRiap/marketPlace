@@ -22,6 +22,10 @@ interface CartItem {
   quantity: number;
   total_price: number;
   images: string[];
+  color_id?: number;
+  color_name?: string;
+  size_id?: number;
+  size_name?: string;
 }
 
 interface CheckoutPageProps {
@@ -47,7 +51,7 @@ const CheckoutPage = ({ cartItems, totalAmount }: CheckoutPageProps) => {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { showMessage } = useSnackbarContext();
-
+  console.log(cartItems);
   const {
     register,
     handleSubmit,
@@ -62,6 +66,13 @@ const CheckoutPage = ({ cartItems, totalAmount }: CheckoutPageProps) => {
 
   const onSubmit = async (data: FormData) => {
     try {
+      const orderItems = cartItems.map((item) => ({
+        product_id: item.id,
+        quantity: item.quantity,
+        color_id: item.color_id,
+        size_id: item.size_id,
+      }));
+
       const orderData = {
         deliveryAddress: `${data.streetAddress}${
           data.apartment ? `, ${data.apartment}` : ""
@@ -71,6 +82,7 @@ const CheckoutPage = ({ cartItems, totalAmount }: CheckoutPageProps) => {
         lastName: data.lastName,
         city: data.city,
         region: data.region,
+        cartItems: orderItems,
       };
 
       await api.post("/orders", orderData);
@@ -81,7 +93,6 @@ const CheckoutPage = ({ cartItems, totalAmount }: CheckoutPageProps) => {
       showMessage("Error placing order: " + error.message, "error");
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white py-4 border-b">
@@ -276,9 +287,30 @@ const CheckoutPage = ({ cartItems, totalAmount }: CheckoutPageProps) => {
                             className="w-10 h-10 rounded mr-3 object-cover"
                           />
                         )}
-                        <span>
-                          {item.name} × {item.quantity}
-                        </span>
+                        <div>
+                          <span className="block">
+                            {item.name} × {item.quantity}
+                          </span>
+                          {/* Added color and size information */}
+                          <div className="flex items-center mt-1 text-xs text-gray-500">
+                            {item.color_name && (
+                              <div className="flex items-center">
+                                <div
+                                  className="w-3 h-3 rounded-full border border-gray-200 mr-1"
+                                  style={{
+                                    backgroundColor:
+                                      item.color_name.toLowerCase(),
+                                  }}
+                                />
+                                <span>{item.color_name}</span>
+                              </div>
+                            )}
+                            {item.color_name && item.size_name && (
+                              <span className="mx-1">•</span>
+                            )}
+                            {item.size_name && <span>{item.size_name}</span>}
+                          </div>
+                        </div>
                       </div>
                       <span>${Number(item.total_price || 0).toFixed(2)}</span>
                     </div>

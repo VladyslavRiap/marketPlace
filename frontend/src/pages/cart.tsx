@@ -31,7 +31,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
   const [localCart, setLocalCart] = useState(initialCart.items);
   const [totalAmount, setTotalAmount] = useState(initialCart.totalAmount);
   const { openModal } = useModal();
-
+  console.log(initialCart);
   const handleRemove = async (productId: number) => {
     try {
       await dispatch(removeFromCart(productId)).unwrap();
@@ -159,7 +159,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
               </div>
             </div>
 
-            <div className="w-full flex flex-col md:flex-row justify-between gap-4 mb-8">
+            <div className="w-full flex  md:flex-row justify-between gap-4 mb-8">
               <Button
                 href="/products"
                 variant="secondary"

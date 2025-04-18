@@ -71,6 +71,9 @@ const DesktopHeader: React.FC<DesktopHeaderProps> = ({
     router.push("/login");
     setIsProfileMenuOpen(false);
   };
+
+  const isSeller = user?.role === "seller";
+
   return (
     <div className="hidden lg:flex lg:justify-between md:flex items-center w-full font-sans ">
       <div className="flex items-center ">
@@ -135,19 +138,21 @@ const DesktopHeader: React.FC<DesktopHeaderProps> = ({
           )}
         </Link>
 
-        <Link
-          href="/cart"
-          className={`relative p-2 hover:text-[#E07575] rounded-full ${
-            pathname === "/cart" ? "bg-[#DB4444]" : ""
-          }`}
-        >
-          <ShoppingCart className="w-6 h-6" />
-          {cart.length > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
-              {cart.length}
-            </span>
-          )}
-        </Link>
+        {!isSeller && (
+          <Link
+            href="/cart"
+            className={`relative p-2 hover:text-[#E07575] rounded-full ${
+              pathname === "/cart" ? "bg-[#DB4444]" : ""
+            }`}
+          >
+            <ShoppingCart className="w-6 h-6" />
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
+                {cart.length}
+              </span>
+            )}
+          </Link>
+        )}
 
         {user && (
           <div

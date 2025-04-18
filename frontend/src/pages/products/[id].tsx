@@ -35,7 +35,12 @@ const ProductPage: React.FC<ProductPageProps> = ({
   const user = useAppSelector((state) => state.auth.user);
   const [isInCart, setIsInCart] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-
+  const [selectedColorId, setSelectedColorId] = useState<number | null>(
+    product?.colors?.[0]?.id || null
+  );
+  const [selectedSizeId, setSelectedSizeId] = useState<number | null>(
+    product?.sizes?.[0]?.id || null
+  );
   if (!product) {
     return <ProductNotFound />;
   }
@@ -65,12 +70,18 @@ const ProductPage: React.FC<ProductPageProps> = ({
       setIsFavorite(favorites.some((fav) => fav.id === product.id));
     }
   }, [cartItems, favorites, product]);
-
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
       if (!isInCart) {
-        await dispatch(addToCart(product.id)).unwrap();
+        const cartPayload = {
+          productId: product.id,
+          quantity: 1,
+          colorId: selectedColorId,
+          sizeId: selectedSizeId,
+        };
+
+        await api.post("/cart", cartPayload);
         showMessage("Product added to cart", "success");
         dispatch(fetchCart());
       }
@@ -181,10 +192,12 @@ const ProductPage: React.FC<ProductPageProps> = ({
             <ProductInfo
               product={product}
               reviews={reviews}
-              colorAttributes={colorAttributes}
-              sizeAttributes={sizeAttributes}
               selectedImage={selectedImage}
               setSelectedImage={setSelectedImage}
+              selectedColorId={selectedColorId}
+              setSelectedColorId={setSelectedColorId}
+              selectedSizeId={selectedSizeId}
+              setSelectedSizeId={setSelectedSizeId}
             />
 
             <ProductActions
@@ -193,6 +206,7 @@ const ProductPage: React.FC<ProductPageProps> = ({
               onAddToCart={handleAddToCart}
               onFavoriteToggle={handleFavoriteToggle}
               showMessage={showMessage}
+              userRole={user?.role}
             />
           </div>
         </div>

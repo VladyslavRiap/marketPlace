@@ -13,7 +13,7 @@ interface Review {
   rating: number;
   comment: string;
   created_at: string;
-  user_name: string;
+  user_name: string | null;
   user_avatar_url?: string;
   user_id: number;
   product_id: number;
@@ -55,6 +55,13 @@ const Reviews: React.FC<ReviewsProps> = ({ initialReviews, productId }) => {
       },
       onSuccess: () => dispatch(fetchReviews(productId)),
     });
+  };
+
+  const getUserInitial = (userName: string | null): string => {
+    if (!userName || userName.trim() === "") {
+      return "?";
+    }
+    return userName.charAt(0).toUpperCase();
   };
 
   return (
@@ -107,14 +114,14 @@ const Reviews: React.FC<ReviewsProps> = ({ initialReviews, productId }) => {
                     {review.user_avatar_url ? (
                       <Image
                         src={review.user_avatar_url}
-                        alt={review.user_name}
+                        alt={review.user_name || "Anonymous"}
                         width={48}
                         height={48}
                         className="object-cover w-full h-full"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg font-medium">
-                        {review.user_name.charAt(0).toUpperCase()}
+                        {getUserInitial(review.user_name)}
                       </div>
                     )}
                   </div>
@@ -124,7 +131,7 @@ const Reviews: React.FC<ReviewsProps> = ({ initialReviews, productId }) => {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                       <p className="font-medium text-gray-900">
-                        {review.user_name}
+                        {review.user_name || "Anonymous"}
                       </p>
                       <p className="text-xs text-gray-400">
                         {new Date(review.created_at).toLocaleDateString(

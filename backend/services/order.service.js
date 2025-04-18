@@ -32,18 +32,29 @@ class OrderService {
     return result.rows[0];
   }
 
-  static async createOrderItem(orderId, productId, sellerId, quantity, price) {
+  static async createOrderItem(
+    orderId,
+    productId,
+    sellerId,
+    quantity,
+    price,
+    colorId = null,
+    sizeId = null
+  ) {
     await pool.query(
       "UPDATE products SET purchase_count = purchase_count + 1 WHERE id = $1",
       [productId]
     );
-    await pool.query(OrderQueries.createOrderItem, [
+    const result = await pool.query(OrderQueries.createOrderItem, [
       orderId,
       productId,
       sellerId,
       quantity,
       price,
+      colorId,
+      sizeId,
     ]);
+    return result.rows[0];
   }
 
   static async clearCart(userId) {

@@ -263,6 +263,49 @@ class ProductService {
   static async incrementPurchaseCount(productId) {
     await pool.query(queries.INCREMENT_PURCHASE_COUNT, [productId]);
   }
-}
 
+  static async getColors() {
+    const result = await pool.query(queries.GET_COLORS);
+    return result.rows;
+  }
+
+  static async getSizes() {
+    const result = await pool.query(queries.GET_SIZES);
+    return result.rows;
+  }
+
+  static async getProductColors(productId) {
+    const result = await pool.query(queries.GET_PRODUCT_COLORS, [productId]);
+    return result.rows;
+  }
+
+  static async getProductSizes(productId) {
+    const result = await pool.query(queries.GET_PRODUCT_SIZES, [productId]);
+    return result.rows;
+  }
+
+  static async addProductColors(productId, colors) {
+    await pool.query(queries.DELETE_PRODUCT_COLORS, [productId]);
+    for (const colorId of colors) {
+      await pool.query(queries.INSERT_PRODUCT_COLOR, [productId, colorId]);
+    }
+  }
+
+  static async addProductSizes(productId, sizes) {
+    await pool.query(queries.DELETE_PRODUCT_SIZES, [productId]);
+    for (const sizeId of sizes) {
+      await pool.query(queries.INSERT_PRODUCT_SIZE, [productId, sizeId]);
+    }
+  }
+
+  static async checkColorExistence(colorId) {
+    const result = await pool.query(queries.CHECK_COLOR_EXISTENCE, [colorId]);
+    return result.rows.length > 0;
+  }
+
+  static async checkSizeExistence(sizeId) {
+    const result = await pool.query(queries.CHECK_SIZE_EXISTENCE, [sizeId]);
+    return result.rows.length > 0;
+  }
+}
 module.exports = ProductService;

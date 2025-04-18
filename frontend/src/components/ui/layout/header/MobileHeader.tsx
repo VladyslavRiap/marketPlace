@@ -44,6 +44,9 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   products,
   searchRef,
 }) => {
+  // Check if user is a seller
+  const isSeller = user?.role === "seller";
+
   return (
     <>
       <div className="w-full flex justify-between items-center md:hidden">
@@ -107,19 +110,22 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
               )}
             </Link>
 
-            <Link
-              href="/cart"
-              className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <ShoppingCart className="w-5 h-5" />
-              <span>Cart</span>
-              {cart.length > 0 && (
-                <span className="ml-auto bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
-                  {cart.length}
-                </span>
-              )}
-            </Link>
+            {/* Only show cart for non-seller users */}
+            {!isSeller && (
+              <Link
+                href="/cart"
+                className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                <span>Cart</span>
+                {cart.length > 0 && (
+                  <span className="ml-auto bg-red-600 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
+                    {cart.length}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {user && (
               <Link

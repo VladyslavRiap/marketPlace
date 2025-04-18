@@ -32,6 +32,27 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => (
         >
           {item.name}
         </Link>
+
+        <div className="mt-1 flex items-center gap-2">
+          {item.color_name && (
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-4 h-4 rounded-full border border-gray-200"
+                style={{ backgroundColor: item.color_name.toLowerCase() }}
+                title={item.color_name}
+              />
+              <span className="text-xs text-gray-600">{item.color_name}</span>
+            </div>
+          )}
+
+          {item.size_name && (
+            <div className="text-xs text-gray-600">
+              <span className="mx-1">•</span>
+              <span>{item.size_name}</span>
+            </div>
+          )}
+        </div>
+
         <div className="mt-1 text-sm text-gray-500 md:hidden">
           Price: ${Number(item.price || 0).toFixed(2)}
         </div>

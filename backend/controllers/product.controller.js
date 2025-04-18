@@ -3,6 +3,7 @@ const uploadFile = require("../services/s3");
 const ERROR_MESSAGES = require("../constants/messageErrors");
 const queries = require("../queries/product.queries");
 const RecommendationService = require("../services/recommendation.service");
+
 class ProductController {
   static fabricGetMethod(baseQuery, hasFilters = false) {
     return async (req, res, next) => {
@@ -39,7 +40,8 @@ class ProductController {
 
   static async addProduct(req, res, next) {
     try {
-      const { name, price, description, subcategory_id } = req.body;
+      const { name, price, description, subcategory_id, colors, sizes } =
+        req.body;
       const userId = req.user.userId;
 
       if (!name || !price || !subcategory_id) {
@@ -64,6 +66,28 @@ class ProductController {
             file.buffer
           );
           await ProductService.addProductImage(product.id, imageUrl);
+        }
+      }
+
+      if (colors && colors.length > 0) {
+        for (const colorId of colors) {
+          const colorExists = await ProductService.checkColorExistence(colorId);
+          if (!colorExists) {
+            return res.status(400).json({
+              error: ERROR_MESSAGES.COLOR_NOT_FOUND(colorId),
+            });
+          }
+        }
+      }
+
+      if (sizes && sizes.length > 0) {
+        for (const sizeId of sizes) {
+          const sizeExists = await ProductService.checkSizeExistence(sizeId);
+          if (!sizeExists) {
+            return res.status(400).json({
+              error: ERROR_MESSAGES.SIZE_NOT_FOUND(sizeId),
+            });
+          }
         }
       }
 
@@ -114,7 +138,15 @@ class ProductController {
   static async updateProduct(req, res, next) {
     try {
       const { id } = req.params;
-      const { name, price, description, subcategory_id, attributes } = req.body;
+      const {
+        name,
+        price,
+        description,
+        subcategory_id,
+        attributes,
+        colors,
+        sizes,
+      } = req.body;
       const userId = req.user.userId;
 
       if (!name || !price || !subcategory_id) {
@@ -140,6 +172,7 @@ class ProductController {
         name,
         price,
         description,
+        subcategory_id,
       };
 
       const updatedProduct = await ProductService.updateProduct(
@@ -162,6 +195,16 @@ class ProductController {
       await ProductService.deleteProductAttributes(id);
       if (attributes && attributes.length > 0) {
         await ProductService.addProductAttributes(id, attributes);
+      }
+
+      await ProductService.deleteProductColors(id);
+      if (colors && colors.length > 0) {
+        await ProductService.addProductColors(id, colors);
+      }
+
+      await ProductService.deleteProductSizes(id);
+      if (sizes && sizes.length > 0) {
+        await ProductService.addProductSizes(id, sizes);
       }
 
       res.json(updatedProduct);
@@ -189,6 +232,8 @@ class ProductController {
       }
 
       await ProductService.deleteProductAttributes(id);
+      await ProductService.deleteProductColors(id);
+      await ProductService.deleteProductSizes(id);
       await ProductService.deleteProduct(id);
       res.json({ message: ERROR_MESSAGES.PRODUCT_DELETED });
     } catch (error) {
@@ -267,6 +312,7 @@ class ProductController {
       next(error);
     }
   }
+
   static async getDiscountedProducts(req, res, next) {
     try {
       const products = await ProductService.getDiscountedProducts();
@@ -295,6 +341,7 @@ class ProductController {
       next(error);
     }
   }
+
   static async getPersonalizedProducts(req, res, next) {
     try {
       const userId = req.user.userId;
@@ -305,6 +352,96 @@ class ProductController {
         limit
       );
       res.json(products);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getColors(req, res, next) {
+    try {
+      const colors = await ProductService.getColors();
+      res.json(colors);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getSizes(req, res, next) {
+    try {
+      const sizes = await ProductService.getSizes();
+      res.json(sizes);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async addProductColors(req, res, next) {
+    try {
+      const { productId } = req.params;
+      const { colors } = req.body;
+
+      if (!productId || !colors || colors.length === 0) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.COLORS_REQUIRED,
+        });
+      }
+
+      const productExists = await ProductService.checkProductExistence(
+        productId
+      );
+      if (!productExists) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.PRODUCT_NOT_FOUND });
+      }
+
+      for (const colorId of colors) {
+        const colorExists = await ProductService.checkColorExistence(colorId);
+        if (!colorExists) {
+          return res.status(400).json({
+            error: ERROR_MESSAGES.COLOR_NOT_FOUND(colorId),
+          });
+        }
+      }
+
+      await ProductService.addProductColors(productId, colors);
+      res.status(200).json({ message: ERROR_MESSAGES.COLORS_ADDED });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async addProductSizes(req, res, next) {
+    try {
+      const { productId } = req.params;
+      const { sizes } = req.body;
+
+      if (!productId || !sizes || sizes.length === 0) {
+        return res.status(400).json({
+          error: ERROR_MESSAGES.SIZES_REQUIRED,
+        });
+      }
+
+      const productExists = await ProductService.checkProductExistence(
+        productId
+      );
+      if (!productExists) {
+        return res
+          .status(404)
+          .json({ error: ERROR_MESSAGES.PRODUCT_NOT_FOUND });
+      }
+
+      for (const sizeId of sizes) {
+        const sizeExists = await ProductService.checkSizeExistence(sizeId);
+        if (!sizeExists) {
+          return res.status(400).json({
+            error: ERROR_MESSAGES.SIZE_NOT_FOUND(sizeId),
+          });
+        }
+      }
+
+      await ProductService.addProductSizes(productId, sizes);
+      res.status(200).json({ message: ERROR_MESSAGES.SIZES_ADDED });
     } catch (error) {
       next(error);
     }

@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "@/redux/hooks";
-import { addProduct } from "@/redux/slices/productsSlice";
+import {
+  addProduct,
+  addProductColors,
+  addProductSizes,
+} from "@/redux/slices/productsSlice";
 
 import { ArrowLeft } from "lucide-react";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
@@ -16,10 +20,32 @@ const AddProductPage = () => {
   const handleSubmit = async (formData: FormData) => {
     setIsSubmitting(true);
     try {
-      const result = await dispatch(addProduct(formData)).unwrap();
+      const productResult = await dispatch(addProduct(formData)).unwrap();
+
+      const colors = formData.getAll("colors[]").map(Number);
+      const sizes = formData.getAll("sizes[]").map(Number);
+
+      if (colors.length > 0) {
+        await dispatch(
+          addProductColors({
+            productId: productResult.id,
+            colors,
+          })
+        ).unwrap();
+      }
+
+      if (sizes.length > 0) {
+        await dispatch(
+          addProductSizes({
+            productId: productResult.id,
+            sizes,
+          })
+        ).unwrap();
+      }
+
       router.push(
         `/products/add/attributes?productId=${
-          result.id
+          productResult.id
         }&subcategoryId=${formData.get("subcategory_id")}`
       );
     } catch (err: any) {

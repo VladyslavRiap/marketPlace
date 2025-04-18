@@ -88,4 +88,10 @@ module.exports = {
   CATEGORY_ID_REQUIRED: "Category ID is required",
   NO_PERSONALIZED_DATA:
     "No personalized data available, showing popular products",
+  COLORS_REQUIRED: "At least one color is required",
+  SIZES_REQUIRED: "At least one size is required",
+  COLOR_NOT_FOUND: (id) => `Color with id ${id} not found`,
+  SIZE_NOT_FOUND: (id) => `Size with id ${id} not found`,
+  COLORS_ADDED: "Colors added successfully",
+  SIZES_ADDED: "Sizes added successfully",
 };

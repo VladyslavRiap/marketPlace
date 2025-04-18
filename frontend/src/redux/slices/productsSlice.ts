@@ -16,6 +16,8 @@ interface ProductsState {
   sellerStatus: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
   attributes: { id: number; name: string; type: string }[];
+  colors: { id: number; name: string; hex_code: string }[];
+  sizes: { id: number; name: string }[];
 }
 interface SearchProductsParams {
   query: string;
@@ -32,6 +34,8 @@ const initialState: ProductsState = {
   sellerStatus: "idle",
   error: null,
   attributes: [],
+  colors: [],
+  sizes: [],
 };
 
 export const fetchProducts = createAsyncThunk(
@@ -153,6 +157,59 @@ export const fetchProductForEdit = createAsyncThunk(
     }
   }
 );
+export const fetchColors = createAsyncThunk(
+  "products/fetchColors",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get("/products/colors");
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Error loading colors");
+    }
+  }
+);
+
+export const fetchSizes = createAsyncThunk(
+  "products/fetchSizes",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get("/products/sizes");
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Error loading sizes");
+    }
+  }
+);
+
+export const addProductColors = createAsyncThunk(
+  "products/addProductColors",
+  async (
+    { productId, colors }: { productId: number; colors: number[] },
+    { rejectWithValue }
+  ) => {
+    try {
+      await api.post(`/products/${productId}/colors`, { colors });
+      return { productId, colors };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Error adding colors");
+    }
+  }
+);
+
+export const addProductSizes = createAsyncThunk(
+  "products/addProductSizes",
+  async (
+    { productId, sizes }: { productId: number; sizes: number[] },
+    { rejectWithValue }
+  ) => {
+    try {
+      await api.post(`/products/${productId}/sizes`, { sizes });
+      return { productId, sizes };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Error adding sizes");
+    }
+  }
+);
 const productsSlice = createSlice({
   name: "products",
   initialState,
@@ -265,6 +322,45 @@ const productsSlice = createSlice({
         state.status = "succeeded";
       })
       .addCase(fetchProductForEdit.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+      .addCase(fetchColors.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchColors.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.colors = action.payload;
+      })
+      .addCase(fetchColors.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+
+      .addCase(fetchSizes.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchSizes.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.sizes = action.payload;
+      })
+      .addCase(fetchSizes.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+
+      .addCase(addProductColors.fulfilled, (state, action) => {
+        state.status = "succeeded";
+      })
+      .addCase(addProductColors.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+
+      .addCase(addProductSizes.fulfilled, (state, action) => {
+        state.status = "succeeded";
+      })
+      .addCase(addProductSizes.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
       });

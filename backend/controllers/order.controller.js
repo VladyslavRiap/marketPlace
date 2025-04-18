@@ -15,9 +15,14 @@ class OrderController {
         });
       }
 
-      const cartItems = await OrderService.getCart(userId);
-      if (!cartItems.length) {
+      const dbCartItems = await OrderService.getCart(userId);
+      if (!dbCartItems || !dbCartItems.length) {
         return res.status(400).json({ error: ERROR_MESSAGES.CART_EMPTY });
+      }
+
+      const requestCartItems = req.body.cartItems || [];
+      if (!Array.isArray(requestCartItems)) {
+        return res.status(400).json({ error: "Invalid cart items format" });
       }
 
       const order = await OrderService.createOrder(
@@ -30,18 +35,25 @@ class OrderController {
         region
       );
 
-      for (const item of cartItems) {
+      for (const dbItem of dbCartItems) {
+        const requestItem =
+          requestCartItems.find(
+            (item) => item.product_id === dbItem.product_id
+          ) || {};
+
         await OrderService.createOrderItem(
           order.id,
-          item.product_id,
-          item.seller_id,
-          item.quantity,
-          item.price
+          dbItem.product_id,
+          dbItem.seller_id,
+          dbItem.quantity,
+          dbItem.price,
+          requestItem.color_id || null,
+          requestItem.size_id || null
         );
 
         await NotificationController.createNotification({
-          userId: item.seller_id,
-          message: `Новый заказ на товар: ${item.name}`,
+          userId: dbItem.seller_id,
+          message: `New order for product: ${dbItem.name}`,
         });
       }
 
@@ -49,7 +61,7 @@ class OrderController {
 
       await NotificationController.createNotification({
         userId,
-        message: `Ваш заказ №${order.id} успешно создан.`,
+        message: `Your order #${order.id} has been created.`,
       });
 
       res.status(201).json(order);

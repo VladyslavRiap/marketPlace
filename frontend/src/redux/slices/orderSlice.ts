@@ -10,6 +10,10 @@ interface OrderItem {
   images: string[];
   seller_id?: number;
   cancel_reason?: string;
+  color_id?: number;
+  color_name?: string;
+  size_id?: number;
+  size_name?: string;
 }
 
 export interface Order {

@@ -13,7 +13,7 @@ const OrdersPage: React.FC<{ userRole: string }> = ({ userRole = "buyer" }) => {
   const dispatch = useAppDispatch();
   const { orders, loading } = useAppSelector((state) => state.orders);
   const isSeller = userRole === "seller";
-
+  console.log(orders);
   useEffect(() => {
     dispatch(fetchOrders(userRole as "buyer" | "seller"));
   }, [dispatch, userRole]);
@@ -39,12 +39,12 @@ const OrdersPage: React.FC<{ userRole: string }> = ({ userRole = "buyer" }) => {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
               {isSeller ? (
                 <>
-                  <Package className="w-7 h-7 text-indigo-600" />
+                  <Package className="w-7 h-7 text-[#DB4444]" />
                   Customer Orders
                 </>
               ) : (
                 <>
-                  <ShoppingBag className="w-7 h-7 text-indigo-600" />
+                  <ShoppingBag className="w-7 h-7 text-[#DB4444]" />
                   My Orders
                 </>
               )}

@@ -4,10 +4,16 @@ const ERROR_MESSAGES = require("../constants/messageErrors");
 class CartController {
   static async addToCart(req, res, next) {
     const { userId } = req.user;
-    const { productId, quantity = 1 } = req.body;
+    const { productId, quantity = 1, colorId, sizeId } = req.body;
 
     try {
-      const cartItem = await CartService.addToCart(userId, productId, quantity);
+      const cartItem = await CartService.addToCart(
+        userId,
+        productId,
+        quantity,
+        colorId,
+        sizeId
+      );
       res.json(cartItem);
     } catch (error) {
       next(error);

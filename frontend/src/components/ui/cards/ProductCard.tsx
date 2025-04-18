@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Heart, ShoppingCart, Edit, Trash2, Star } from "lucide-react";
 import { Product } from "../../../../types/product";
 import Button from "@/components/Button";
+import { useAppSelector } from "@/redux/hooks";
 
 interface ProductCardProps {
   product: Product;
@@ -17,6 +18,7 @@ interface ProductCardProps {
   isFavorite?: boolean;
   customFavoriteIcon?: React.ReactNode;
   showAddToCart?: boolean;
+  userRole?: string | null;
 }
 
 const ProductCard = ({
@@ -30,7 +32,11 @@ const ProductCard = ({
   isFavorite = false,
   customFavoriteIcon,
   showAddToCart = false,
+  userRole,
 }: ProductCardProps) => {
+  const user = useAppSelector((state) => state.auth.user);
+  const hideCartFunctionality = user?.role === "seller" || userRole === null;
+
   const sizeClasses = {
     small: {
       container: "h-full flex flex-col",
@@ -101,8 +107,8 @@ const ProductCard = ({
           </div>
         </Link>
 
-        {onAddToCart && (
-          <div className="absolute -bottom-1 lg:bottom-0 left-0 right-0 bg-white/90  lg:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        {onAddToCart && !hideCartFunctionality && (
+          <div className="absolute -bottom-1 lg:bottom-0 left-0 right-0 bg-white/90 lg:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button
               variant={isInCart ? "secondary" : "primary"}
               size="sm"

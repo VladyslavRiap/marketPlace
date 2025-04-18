@@ -17,6 +17,10 @@ interface OrderItem {
   status: string;
   images: string[];
   cancel_reason?: string;
+  color_id?: number;
+  color_name?: string;
+  size_id?: number;
+  size_name?: string;
 }
 
 interface Order {
@@ -157,6 +161,27 @@ const BuyerOrders = ({ orders }: BuyerOrdersProps) => {
                           <p className="text-sm text-gray-500 mb-2">
                             {item.quantity} × ${item.price.toFixed(2)}
                           </p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {item.color_name && (
+                              <div className="flex items-center text-sm text-gray-600">
+                                <span className="mr-1">Color:</span>
+                                <div
+                                  className="w-4 h-4 rounded-full border border-gray-200 mr-1"
+                                  style={{
+                                    backgroundColor:
+                                      item.color_name.toLowerCase(),
+                                  }}
+                                />
+                                <span>{item.color_name}</span>
+                              </div>
+                            )}
+                            {item.size_name && (
+                              <div className="text-sm text-gray-600">
+                                <span className="mr-1">Size:</span>
+                                <span>{item.size_name}</span>
+                              </div>
+                            )}
+                          </div>
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <StatusBadge
                               status={item.status}
