@@ -18,13 +18,19 @@ const {
   notFoundHandler,
 } = require("./middlewares/error.middleware");
 const app = express();
-
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Marketplace API is running",
+    documentation: "/api/docs",
+  });
+});
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(
   cors({
-    origin: true,
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
   })
 );
