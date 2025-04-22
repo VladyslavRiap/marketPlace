@@ -1,12 +1,14 @@
 import axios from "axios";
 
+const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
 const api = axios.create({
-  baseURL: "https://marketplace-production-9538.up.railway.app/api",
+  baseURL,
   withCredentials: true,
 });
 
 const refreshApi = axios.create({
-  baseURL: "https://marketplace-production-9538.up.railway.app/api",
+  baseURL,
   withCredentials: true,
 });
 
