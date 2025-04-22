@@ -29,12 +29,6 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
     }
   }, [isAuthenticated, router]);
 
-  useEffect(() => {
-    if (user) {
-      router.push("/profile");
-    }
-  }, [user, router]);
-
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);

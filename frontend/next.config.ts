@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
       {
         source: "/api/:path*",
         destination:
-          "https://market-place-8j554mz4m-vladyslavriaps-projects.vercel.app/api/:path*",
+          "https://marketplace-production-9538.up.railway.app/api/:path*",
       },
     ];
   },

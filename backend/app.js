@@ -30,8 +30,13 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: [
+      "https://market-place-pl7afnwv1-vladyslavriaps-projects.vercel.app/",
+      "http://localhost:3000",
+    ],
     credentials: true,
+    exposedHeaders: ["set-cookie"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
