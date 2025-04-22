@@ -1,12 +1,12 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://marketplace-production-9538.up.railway.app/api",
   withCredentials: true,
 });
 
 const refreshApi = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://marketplace-production-9538.up.railway.app/api",
   withCredentials: true,
 });
 
