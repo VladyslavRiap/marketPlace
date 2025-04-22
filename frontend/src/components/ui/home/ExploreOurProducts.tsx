@@ -116,8 +116,8 @@ const ExploreOurProducts: React.FC<ExploreOurProductsProps> = ({
             className="overflow-x-auto pb-4 no-scrollbar scrollbar-hide"
           >
             <div className="flex gap-6 w-max lg:w-auto">
-              {products.slice(0, 10).map((product) => {
-                return (
+              {Array.isArray(products) &&
+                products.slice(0, 10).map((product) => (
                   <div key={product.id} className="w-[280px] flex-shrink-0">
                     <div className="group relative">
                       <ProductCard
@@ -129,8 +129,7 @@ const ExploreOurProducts: React.FC<ExploreOurProductsProps> = ({
                       />
                     </div>
                   </div>
-                );
-              })}
+                ))}
             </div>
           </div>
         </div>

@@ -40,7 +40,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({
       <div
         className={`flex items-center justify-between p-2  ${
           variant === "desktop"
-            ? "rounded-lg bg-gray-100 hover:bg-gray-200"
+            ? "rounded-lg bg-gray-50 hover:bg-gray-200"
             : "hover:bg-gray-50"
         } cursor-pointer`}
         onClick={onClick}

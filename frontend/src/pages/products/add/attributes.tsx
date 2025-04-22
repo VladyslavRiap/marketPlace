@@ -95,7 +95,7 @@ const AddAttributesPage = () => {
                     Specify product characteristics
                   </p>
                 </div>
-                <div className="bg-blue-50 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                <div className="bg-blue-50 text-[#E07575] px-3 py-1 rounded-full text-sm font-medium">
                   Step 2 of 2
                 </div>
               </div>

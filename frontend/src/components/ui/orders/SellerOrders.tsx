@@ -106,7 +106,7 @@ const SellerOrders: React.FC<SellerOrdersProps> = ({ orders }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+            className="bg-gray-50 rounded-xl shadow-sm border border-gray-100 overflow-hidden"
           >
             <div className="p-4 md:p-6">
               <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-4">

@@ -86,9 +86,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-gray-50   ">
       <motion.header
-        className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 py-4"
+        className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200 px-6 py-4"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}

@@ -95,7 +95,7 @@ const CheckoutPage = ({ cartItems, totalAmount }: CheckoutPageProps) => {
   };
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white py-4 border-b">
+      <div className="bg-gray-50 py-4 border-b">
         <div className="container mx-auto px-4">
           <div className="flex items-center text-sm text-gray-600">
             <Link href="/" className="flex items-center hover:text-[#E07575]">

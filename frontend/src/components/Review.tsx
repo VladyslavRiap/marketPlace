@@ -66,7 +66,7 @@ const Reviews: React.FC<ReviewsProps> = ({ initialReviews, productId }) => {
 
   return (
     <motion.div
-      className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+      className="mt-8 bg-gray-50 p-6 rounded-xl shadow-sm border border-gray-100"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}

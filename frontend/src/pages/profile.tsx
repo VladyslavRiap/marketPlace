@@ -183,7 +183,6 @@ const ProfilePage = ({ user: initialUser }: { user: any }) => {
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   try {
-    console.log(req.headers);
     const { data } = await api.get("/users/me", {
       headers: { cookie: req.headers.cookie || "" },
     });

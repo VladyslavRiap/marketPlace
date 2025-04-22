@@ -32,7 +32,7 @@ export const ProductImages = ({
               alt={`Thumbnail ${index + 1}`}
               width={64}
               height={64}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </button>
         ))}
@@ -44,7 +44,7 @@ export const ProductImages = ({
           alt="Product image"
           fill
           priority
-          className="object-cover"
+          className="object-contain"
           sizes="(max-width: 768px) 100vw, 50vw"
         />
         {old_price && (

@@ -129,7 +129,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ order }) => {
                       <img
                         src={item.images[0]}
                         alt="Product"
-                        className="w-16 h-16 rounded-lg object-cover border border-gray-100"
+                        className="w-16 h-16 rounded-lg object-contain border border-gray-100"
                       />
                     </Link>
                   )}

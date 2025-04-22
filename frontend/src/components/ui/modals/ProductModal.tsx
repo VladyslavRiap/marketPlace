@@ -43,6 +43,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
   const handleProductSubmit = async (productData: FormData) => {
     try {
       const editFormData = new FormData();
+
       editFormData.append("name", productData.get("name") as string);
       editFormData.append(
         "description",
@@ -50,16 +51,30 @@ const ProductModal: React.FC<ProductModalProps> = ({
       );
       editFormData.append("price", productData.get("price") as string);
 
+      const subcategoryId =
+        productToEdit.subcategory_id || productToEdit.subcategory;
+      if (!subcategoryId) {
+        throw new Error("Subcategory is required");
+      }
+      editFormData.append("subcategory_id", subcategoryId.toString());
+
       const images = productData.getAll("images");
       images.forEach((image) => {
         editFormData.append("images", image);
       });
 
-      if (productToEdit.subcategory) {
-        editFormData.append(
-          "subcategory_id",
-          productToEdit.subcategory.toString()
-        );
+      const colors = productData.getAll("colors[]");
+      if (colors && colors.length > 0) {
+        colors.forEach((color) => {
+          editFormData.append("colors[]", color.toString());
+        });
+      }
+
+      const sizes = productData.getAll("sizes[]");
+      if (sizes && sizes.length > 0) {
+        sizes.forEach((size) => {
+          editFormData.append("sizes[]", size.toString());
+        });
       }
 
       await dispatch(
@@ -95,7 +110,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
           )}
 
           <ProductForm
-            initialProduct={productToEdit}
+            initialProduct={{
+              ...productToEdit,
+
+              subcategory_id:
+                productToEdit.subcategory_id || productToEdit.subcategory,
+            }}
             onSubmit={handleProductSubmit}
             isEditMode={true}
           />

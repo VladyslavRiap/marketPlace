@@ -138,20 +138,12 @@ class ProductController {
   static async updateProduct(req, res, next) {
     try {
       const { id } = req.params;
-      const {
-        name,
-        price,
-        description,
-        subcategory_id,
-        attributes,
-        colors,
-        sizes,
-      } = req.body;
+      const { name, price, description, attributes, colors, sizes } = req.body;
       const userId = req.user.userId;
 
-      if (!name || !price || !subcategory_id) {
+      if (!name || !price) {
         return res.status(400).json({
-          error: ERROR_MESSAGES.PRODUCT_REQUIRED_FIELDS,
+          error: "Name and price are required",
         });
       }
 
@@ -172,7 +164,6 @@ class ProductController {
         name,
         price,
         description,
-        subcategory_id,
       };
 
       const updatedProduct = await ProductService.updateProduct(

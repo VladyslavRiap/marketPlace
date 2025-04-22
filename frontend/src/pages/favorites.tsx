@@ -44,9 +44,11 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
     const [favoritesRes, personalizedRes] = await Promise.all([
       api.get<Product[]>("/favorites", {
         headers: { cookie: req.headers.cookie || "" },
+        withCredentials: true,
       }),
       api.get<Product[]>("/recommendations/personalized-products?limit=10", {
         headers: { cookie: req.headers.cookie || "" },
+        withCredentials: true,
       }),
     ]);
 

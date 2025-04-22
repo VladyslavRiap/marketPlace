@@ -161,7 +161,12 @@ class ProductService {
   static async deleteProduct(productId) {
     await pool.query(queries.DELETE_PRODUCT, [productId]);
   }
-
+  static async deleteProductColors(productId) {
+    await pool.query(queries.DELETE_PRODUCT_COLORS, [productId]);
+  }
+  static async deleteProductSizes(productId) {
+    await pool.query(queries.DELETE_PRODUCT_SIZES, [productId]);
+  }
   static async addProductAttributes(productId, attributes) {
     for (const attr of attributes) {
       await pool.query(queries.INSERT_PRODUCT_ATTRIBUTES, [

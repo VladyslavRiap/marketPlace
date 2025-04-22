@@ -67,7 +67,7 @@ const BuyerOrders = ({ orders }: BuyerOrdersProps) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+            className="bg-gray-50 rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
           >
             <Link href={`/orders/${order.id}`} passHref>
               <div className="p-4 md:p-6">
@@ -145,7 +145,7 @@ const BuyerOrders = ({ orders }: BuyerOrdersProps) => {
                             <img
                               src={item.images[0]}
                               alt={item.product_name}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain"
                             />
                           </div>
                         )}

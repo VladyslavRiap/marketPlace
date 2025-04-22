@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PriceInput from "../filters/PriceInput";
 import ImageUploader from "@/components/ImageUploader";
 import CategorySelector from "../filters/CategorySelector";
@@ -40,12 +40,23 @@ const ProductForm = ({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    if (isEditMode && initialProduct) {
+      setProduct((prev) => ({
+        ...prev,
+        subcategory_id:
+          initialProduct.subcategory_id || initialProduct.subcategory || 0,
+      }));
+    }
+  }, [initialProduct, isEditMode]);
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!product.name.trim()) newErrors.name = "Name is required";
     if (!product.description.trim())
       newErrors.description = "Description is required";
-    if (product.price <= 0) newErrors.price = "Price must be greater than 0";
+    if (!product.price || product.price <= 0)
+      newErrors.price = "Price must be greater than 0";
 
     if (!isEditMode) {
       if (product.category_id === 0)
@@ -69,11 +80,8 @@ const ProductForm = ({
     formData.append("description", product.description);
     formData.append("price", product.price.toString());
 
-    if (!isEditMode) {
-      formData.append("subcategory_id", product.subcategory_id.toString());
-    }
+    formData.append("subcategory_id", product.subcategory_id.toString());
 
-    // Добавляем цвета и размеры в formData
     selectedColors.forEach((colorId) => {
       formData.append("colors[]", colorId.toString());
     });
@@ -131,14 +139,17 @@ const ProductForm = ({
           </label>
           <PriceInput
             value={product.price}
-            onChange={(val: number) => setProduct({ ...product, price: val })}
+            onChange={(val: number) => {
+              const price = typeof val === "number" && !isNaN(val) ? val : 0;
+              setProduct({ ...product, price });
+            }}
           />
           {errors.price && (
             <p className="mt-1 text-sm text-red-600">{errors.price}</p>
           )}
         </div>
 
-        {!isEditMode && (
+        {!isEditMode ? (
           <div>
             <CategorySelector
               categoryId={product.category_id}
@@ -159,6 +170,12 @@ const ProductForm = ({
               </p>
             )}
           </div>
+        ) : (
+          <input
+            type="hidden"
+            name="subcategory_id"
+            value={product.subcategory_id}
+          />
         )}
 
         <div className="md:col-span-2">

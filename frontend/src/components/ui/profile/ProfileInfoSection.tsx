@@ -129,7 +129,6 @@ export const ProfileInfoSection = ({
               <Button
                 variant="ghost"
                 size="sm"
-                icon={Check}
                 onClick={handleUpdateName}
                 className="text-green-600 hover:text-green-800 p-2"
               >
@@ -138,7 +137,6 @@ export const ProfileInfoSection = ({
               <Button
                 variant="ghost"
                 size="sm"
-                icon={X}
                 onClick={() => setEditName(false)}
                 className="text-red-600 hover:text-red-800 p-2"
               >
@@ -173,7 +171,6 @@ export const ProfileInfoSection = ({
               <Button
                 variant="ghost"
                 size="sm"
-                icon={Edit}
                 onClick={() => setEditPhone(true)}
                 className="p-1"
               >
@@ -195,7 +192,6 @@ export const ProfileInfoSection = ({
               <Button
                 variant="ghost"
                 size="sm"
-                icon={Check}
                 onClick={handleUpdatePhone}
                 className="text-green-600 hover:text-green-800 p-2"
               >
@@ -204,7 +200,6 @@ export const ProfileInfoSection = ({
               <Button
                 variant="ghost"
                 size="sm"
-                icon={X}
                 onClick={() => setEditPhone(false)}
                 className="text-red-600 hover:text-red-800 p-2"
               >
@@ -230,10 +225,10 @@ export const ProfileInfoSection = ({
           <Button
             variant="primary"
             size="lg"
-            icon={Key}
             fullWidth
             onClick={() => setEditPassword(!editPassword)}
           >
+            <Key className="mr-2" />
             {editPassword ? "Cancel password change" : "Change password"}
           </Button>
 
@@ -275,13 +270,8 @@ export const ProfileInfoSection = ({
           )}
         </div>
 
-        <Button
-          variant="secondary"
-          size="lg"
-          icon={LogOut}
-          fullWidth
-          onClick={onLogoutClick}
-        >
+        <Button variant="secondary" size="lg" fullWidth onClick={onLogoutClick}>
+          <LogOut className="mr-2" />
           Log out
         </Button>
       </div>

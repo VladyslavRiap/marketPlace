@@ -41,8 +41,8 @@ const ProductCard = ({
     small: {
       container: "h-full flex flex-col",
       image: "aspect-square h-40",
-      content: "p-2 flex-grow flex flex-col",
-      title: "text-sm line-clamp-2 ",
+      content: "p-2 flex-grow flex flex-col justify-between min-h-[120px]",
+      title: "text-sm line-clamp-2 h-10",
       price: "text-base",
       oldPrice: "text-xs",
       button: "py-1 px-2 text-xs",
@@ -51,8 +51,8 @@ const ProductCard = ({
     },
     medium: {
       container: "h-full flex flex-col",
-      content: "p-3 flex-grow flex flex-col",
-      title: "text-md line-clamp-2 ",
+      content: "p-3 flex-grow flex flex-col justify-between min-h-[140px]",
+      title: "text-md line-clamp-2 h-10",
       price: "text-lg",
       oldPrice: "text-sm",
       image: "aspect-square lg:h-64 h-40",
@@ -63,8 +63,8 @@ const ProductCard = ({
     large: {
       container: "h-full flex flex-col",
       image: "aspect-[4/3] h-80",
-      content: "p-4 flex-grow flex flex-col",
-      title: "text-lg line-clamp-2 ",
+      content: "p-4 flex-grow flex flex-col justify-between min-h-[160px]",
+      title: "text-lg line-clamp-2 h-12",
       price: "text-xl",
       oldPrice: "text-base",
       button: "py-2 px-4 text-md",
@@ -102,7 +102,7 @@ const ProductCard = ({
               alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover transition-transform duration-300"
+              className="w-full h-full object-contain transition-transform duration-300"
             />
           </div>
         </Link>
@@ -177,7 +177,7 @@ const ProductCard = ({
       <div className={sizeClasses[size].content}>
         <Link href={`/products/${product.id}`} passHref>
           <h3
-            className={`flex items-center font-medium text-gray-900  hover:text-[#DB4444] ${sizeClasses[size].title}`}
+            className={`flex items-center font-medium text-gray-900 hover:text-[#DB4444] ${sizeClasses[size].title}`}
           >
             {product.name}
           </h3>

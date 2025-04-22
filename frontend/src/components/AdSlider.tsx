@@ -117,9 +117,7 @@ const AdSlider = ({ position }: AdSliderProps) => {
               <div className="absolute bottom-6 right-6">
                 <a
                   href={ads[currentSlide].link_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white/90 hover:bg-[#E07575] hover:text-white text-gray-900  px-6 py-3 rounded-full flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  className="bg-white/90 hover:bg-[#E07575] hover:text-white text-gray-900 px-6 py-3 rounded-full flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
                   Shop Now
                   <ArrowRight size={16} />

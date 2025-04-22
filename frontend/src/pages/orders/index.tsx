@@ -28,7 +28,7 @@ const OrdersPage: React.FC<{ userRole: string }> = ({ userRole = "buyer" }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm">
+      <div className="bg-gray-50 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <motion.div
             initial={{ opacity: 0, y: -10 }}

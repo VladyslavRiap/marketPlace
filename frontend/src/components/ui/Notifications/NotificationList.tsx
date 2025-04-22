@@ -44,7 +44,7 @@ const NotificationList = ({
   if (isDropdown) {
     return (
       <div className="w-100 max-h-[calc(100vh-8rem)] overflow-y-auto bg-white rounded-xl shadow-xl border border-gray-200">
-        <div className="sticky top-0 bg-gradient-to-r from-indigo-50 to-blue-50 z-10 p-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="sticky top-0 bg-gray-50 z-10 p-4  flex justify-between items-center">
           <h3 className="font-semibold text-lg flex items-center gap-2 text-[#DB4444]">
             <Bell className="w-5 h-5 text-[#DB4444]" />
             Notifications
@@ -71,7 +71,7 @@ const NotificationList = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className={`p-4 hover:bg-indigo-50 cursor-pointer transition-colors ${
+                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
                     !notification.is_read
                       ? "bg-blue-50 border-l-4 border-blue-500"
                       : ""
@@ -108,31 +108,31 @@ const NotificationList = ({
                       </p>
                     </div>
                     <div className="flex gap-1">
-                      <Button
-                        onClick={(e: any) => {
-                          e.stopPropagation();
-                          handleMarkAsRead(notification.id);
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-400 hover:text-green-600 hover:bg-green-50"
-                        iconPosition="right"
-                        title="Mark as read"
-                      >
-                        <Check />
-                      </Button>
+                      {!notification.is_read && (
+                        <Button
+                          onClick={(e: any) => {
+                            e.stopPropagation();
+                            handleMarkAsRead(notification.id);
+                          }}
+                          variant="ghost"
+                          className="hover:bg-gray-50"
+                          iconPosition="right"
+                          title="Mark as read"
+                        >
+                          <Check className="w-4 h-4 hover:text-green-600" />
+                        </Button>
+                      )}
                       <Button
                         onClick={(e: any) => {
                           e.stopPropagation();
                           handleDelete(notification.id);
                         }}
                         variant="ghost"
-                        size="sm"
-                        className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                        className="hover:bg-gray-50"
                         iconPosition="right"
                         title="Delete notification"
                       >
-                        <Trash2 />
+                        <Trash2 className="w-4 h-4 hover:text-red-600" />
                       </Button>
                     </div>
                   </div>
@@ -142,14 +142,14 @@ const NotificationList = ({
           </ul>
         )}
 
-        <div className="sticky bottom-0 bg-gradient-to-r from-indigo-50 to-blue-50 border-t border-gray-200 p-3 text-center">
+        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-3 text-center">
           <Button
             onClick={() => {
               router.push("/notifications");
               onClose?.();
             }}
-            variant="ghost"
-            className="text-[#DB4444] hover:text-[#E07575] hover:bg-indigo-100"
+            variant="secondary"
+            className="text-[#DB4444] border rounded-md "
           >
             Show all notifications
           </Button>
@@ -165,8 +165,7 @@ const NotificationList = ({
       transition={{ duration: 0.3 }}
       className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200"
     >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="p-4 border-b border-gray-200 bg-gray-50 flex sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#DB4444] flex items-center gap-2">
             <Bell className="w-5 h-5 text-[#DB4444]" />
@@ -176,12 +175,12 @@ const NotificationList = ({
             {notifications.length} notifications
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 ">
           <Button
             onClick={() => dispatch(fetchNotifications())}
             variant="ghost"
             size="sm"
-            className="border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+            className="border rounded-md  text-indigo-700 hover:bg-gray-100"
             icon={RefreshCw}
             iconPosition="right"
             disabled={loading}
@@ -191,7 +190,6 @@ const NotificationList = ({
         </div>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="p-8 flex flex-col items-center justify-center text-indigo-600">
           <RefreshCw className="w-8 h-8 animate-spin mb-2" />
@@ -212,7 +210,7 @@ const NotificationList = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className={`p-4 hover:bg-indigo-50 transition-colors ${
+                className={`p-4 hover:bg-gray-50 transition-colors ${
                   !notification.is_read
                     ? "bg-blue-50 border-l-4 border-blue-500"
                     : ""
@@ -242,13 +240,13 @@ const NotificationList = ({
                       )}
                     </p>
                   </div>
-                  <div className="flex gap-2 sm:gap-3 justify-between">
+                  <div className="flex gap-2 sm:gap-3 justify-end lg:justify-between">
                     {!notification.is_read && (
                       <Button
                         onClick={() => handleMarkAsRead(notification.id)}
                         variant="ghost"
                         size="sm"
-                        className="border border-green-200 text-green-700 hover:bg-green-50"
+                        className="border rounded-md border-green-200 text-green-700 hover:bg-green-50"
                         icon={Check}
                         iconPosition="right"
                       >
@@ -257,9 +255,9 @@ const NotificationList = ({
                     )}
                     <Button
                       onClick={() => handleDelete(notification.id)}
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
-                      className="border border-red-200 text-red-700 hover:bg-red-50"
+                      className="border rounded-md "
                       icon={Trash2}
                       iconPosition="right"
                     >

@@ -4,6 +4,7 @@ const ERROR_MESSAGES = require("../constants/messageErrors");
 
 const ACCESS_TOKEN_EXPIRES = "15m";
 const REFRESH_TOKEN_EXPIRES = "7d";
+
 class AuthController {
   static async register(req, res, next) {
     const { name, email, password, role } = req.body;
@@ -43,20 +44,20 @@ class AuthController {
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        domain: "localhost",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        domain:
+          process.env.NODE_ENV === "production" ? ".railway.app" : undefined,
         maxAge: 15 * 60 * 1000,
-        path: "/",
       });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        domain: "localhost",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        domain:
+          process.env.NODE_ENV === "production" ? ".railway.app" : undefined,
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: "/",
       });
 
       res.json({ user });
@@ -103,21 +104,23 @@ class AuthController {
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        domain: "localhost",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        domain:
+          process.env.NODE_ENV === "production" ? ".railway.app" : undefined,
         maxAge: 15 * 60 * 1000,
-        path: "/",
       });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        domain: "localhost",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        domain:
+          process.env.NODE_ENV === "production" ? ".railway.app" : undefined,
+        maxAge: 15 * 60 * 1000,
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: "/",
       });
+
       res.json({ user });
     } catch (error) {
       next(error);
@@ -125,8 +128,22 @@ class AuthController {
   }
 
   static async logout(req, res) {
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain:
+        process.env.NODE_ENV === "production" ? ".railway.app" : undefined,
+      maxAge: 15 * 60 * 1000,
+    });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain:
+        process.env.NODE_ENV === "production" ? ".railway.app" : undefined,
+      maxAge: 15 * 60 * 1000,
+    });
     res.json({ message: ERROR_MESSAGES.LOGOUT_SUCCESS });
   }
 
@@ -157,12 +174,13 @@ class AuthController {
 
       res.cookie("accessToken", newAccessToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        domain: "localhost",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        domain:
+          process.env.NODE_ENV === "production" ? ".railway.app" : undefined,
         maxAge: 15 * 60 * 1000,
-        path: "/",
       });
+
       res.json({ accessToken: newAccessToken });
     } catch (error) {
       return res

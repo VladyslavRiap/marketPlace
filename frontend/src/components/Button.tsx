@@ -74,7 +74,7 @@ const Button = ({
       )}
       {children}
       {Icon && iconPosition === "right" && (
-        <Icon className={`${iconSizeClasses[size]} ml-2`} />
+        <Icon className={`${iconSizeClasses[size]} lg:ml-2 ml:-1`} />
       )}
     </>
   );

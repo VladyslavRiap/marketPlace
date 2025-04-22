@@ -9,6 +9,7 @@ module.exports = {
       RETURNING *`,
 
   DELETE_PRODUCT: "DELETE FROM products WHERE id = $1",
+
   GET_ALL_USERS: "SELECT id, email, is_blocked, name, role FROM users",
 
   BLOCK_USER: "UPDATE users SET is_blocked = true WHERE id = $1",

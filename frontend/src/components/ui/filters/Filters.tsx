@@ -31,7 +31,7 @@ const Filters = ({
   className = "",
 }: FiltersProps) => {
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`bg-gray-50 space-y-6 ${className}`}>
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

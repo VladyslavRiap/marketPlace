@@ -239,9 +239,9 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
                   : 0,
               }}
               transition={{ duration: 0.3 }}
-              className={`fixed inset-y-0 left-0 w-full z-50
+              className={`fixed  inset-y-0 left-0 w-full z-50
     lg:static lg:z-auto lg:w-72
-    bg-white p-6 overflow-y-auto
+    bg-gray-50 p-6 overflow-y-auto
     ${mobileFiltersOpen ? "block" : "hidden lg:block"}`}
             >
               <div className="flex justify-between items-center mb-4 lg:hidden">
@@ -276,7 +276,7 @@ const Home: React.FC<HomeProps> = ({ categories, subcategories }) => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-wrap gap-4 justify-between items-center"
+                className="bg-gray-50 rounded-lg shadow-sm p-4 mb-6 flex flex-wrap gap-4 justify-between items-center"
               >
                 <div className="text-sm text-gray-600">
                   Found: {products.length} products

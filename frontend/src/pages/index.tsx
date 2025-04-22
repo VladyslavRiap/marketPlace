@@ -162,7 +162,9 @@ const HomePage: React.FC<HomePageProps> = ({
         <TopSellingProducts topSellingProducts={topSellingProducts} />
         <div className="px-2 sm:px-0">
           {" "}
-          <AdSlider position="mainPage" />
+          <div className="w-100% h-96">
+            <AdSlider position="mainPage" />
+          </div>
         </div>
         <ExploreOurProducts exploreProducts={exploreProducts} />
         <AdGridSection />

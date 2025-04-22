@@ -21,9 +21,9 @@ const DesktopCategoryMenu: React.FC<DesktopCategoryMenuProps> = ({
   handleSubcategoryClick,
 }) => {
   return (
-    <div className="hidden lg:block w-72 bg-white shadow-sm z-10 relative">
+    <div className="hidden lg:block w-72 bg-gray-50 shadow-sm z-10 relative">
       <div className=" sticky top-0  overflow-visible">
-        <div className="space-y-1 border-r border-gray-200 ">
+        <div className="space-y-1 border-r  border-gray-200 ">
           {categories.map((category) => (
             <CategoryItem
               key={category.id}

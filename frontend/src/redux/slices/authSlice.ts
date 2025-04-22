@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/utils/api";
-import axios from "axios";
 
 interface User {
   id: number;
@@ -10,10 +9,7 @@ interface User {
   mobnumber?: string;
   avatar_url?: string;
 }
-interface ApiError {
-  message: string;
-  status?: number;
-}
+
 interface AuthState {
   user: User | null;
   loading: boolean;
@@ -51,9 +47,7 @@ export const loginUser = createAsyncThunk(
     { dispatch, rejectWithValue }
   ) => {
     try {
-      const response = await axios.post("/api/auth/login", userData, {
-        withCredentials: true,
-      });
+      const response = await api.post("/auth/login", userData);
 
       await dispatch(fetchUser());
       return response.data;
@@ -70,10 +64,12 @@ export const fetchUser = createAsyncThunk(
       const response = await api.get("/users/me");
       return response.data;
     } catch (error: any) {
-      return rejectWithValue({
-        message: error.response?.data?.error || "Profile loading error",
-        status: error.response?.status,
-      } as ApiError);
+      if (error.response?.status === 404) {
+        return rejectWithValue("User not found");
+      }
+      return rejectWithValue(
+        error.response?.data?.error || "Profile loading error"
+      );
     }
   }
 );
@@ -178,12 +174,8 @@ const authSlice = createSlice({
       })
       .addCase(fetchUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = (action.payload as ApiError).message;
+        state.error = action.payload as string;
         state.user = null;
-
-        if ((action.payload as ApiError).status === 401) {
-          api.defaults.headers.common["Authorization"] = "";
-        }
       })
 
       .addCase(logoutUser.fulfilled, (state) => {

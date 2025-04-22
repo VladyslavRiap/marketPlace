@@ -39,7 +39,7 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <div className="bg-white py-10">
+    <div className="bg-gray-50 py-10">
       <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 text-center">
         {features.map((feature, index) => (
           <FeatureItem key={index} {...feature} />

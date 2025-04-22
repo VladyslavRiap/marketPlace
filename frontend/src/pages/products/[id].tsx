@@ -135,7 +135,7 @@ const ProductPage: React.FC<ProductPageProps> = ({
     ) || [];
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-gray-50 min-h-screen">
       <div className="bg-gray-50 py-4 border-b">
         <div className="container mx-auto px-4">
           <div className="flex items-center text-sm text-gray-600 overflow-x-auto whitespace-nowrap">
@@ -167,7 +167,7 @@ const ProductPage: React.FC<ProductPageProps> = ({
         </div>
       </div>
 
-      <div className="md:hidden sticky top-0 z-10 bg-white shadow-sm p-4 flex items-center justify-between">
+      <div className="md:hidden sticky top-0 z-10 bg-gray-50 shadow-sm p-4 flex items-center justify-between">
         <button onClick={() => router.back()} className="text-gray-700">
           <ChevronLeft size={24} />
         </button>

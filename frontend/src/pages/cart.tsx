@@ -30,7 +30,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
   const { showMessage } = useSnackbarContext();
   const [localCart, setLocalCart] = useState(initialCart.items);
   const [totalAmount, setTotalAmount] = useState(initialCart.totalAmount);
-  const { openModal } = useModal();
+  const { openModal, closeModal } = useModal();
   console.log(initialCart);
   const handleRemove = async (productId: number) => {
     try {
@@ -92,6 +92,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
       setLocalCart([]);
       setTotalAmount(0);
       showMessage("Cart cleared", "success");
+      closeModal(CLEAR_CART_MODAL);
     } catch (error: any) {
       showMessage("Error: " + error.message, "error");
     }
@@ -99,7 +100,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="bg-white py-4 border-b">
+      <div className="bg-gray-50 py-4 border-b">
         <div className="container mx-auto px-4">
           <div className="flex items-center text-sm text-gray-600">
             <Link href="/" className="flex items-center hover:text-[#E07575]">
@@ -117,7 +118,7 @@ const CartPage = ({ initialCart }: CartPageProps) => {
         </div>
       </div>
 
-      <div className="lg:hidden sticky top-0 z-10 bg-white shadow-sm p-4 flex items-center">
+      <div className="lg:hidden sticky top-0 z-10 bg-gray-50 shadow-sm p-4 flex items-center">
         <Link href="/" className="mr-4">
           <ArrowLeft className="w-6 h-6 text-gray-700" />
         </Link>
@@ -200,6 +201,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   try {
     const { data } = await api.get("/cart", {
       headers: { cookie: req.headers.cookie || "" },
+      withCredentials: true,
     });
     return { props: { initialCart: data } };
   } catch (error) {

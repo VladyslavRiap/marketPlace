@@ -45,13 +45,11 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700">
-        Category
-      </label>
+      <label className="block text-sm font-medium text-gray-50">Category</label>
       <select
         value={categoryId}
         onChange={(e) => onCategoryChange(parseInt(e.target.value, 10))}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-white px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
       >
         <option value={0}>Choose category</option>
         {categories.map((category) => (
@@ -67,7 +65,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       <select
         value={subcategoryId}
         onChange={(e) => onSubcategoryChange(parseInt(e.target.value, 10))}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        className="w-full px-4  bg-white py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         disabled={!categoryId}
         required
       >

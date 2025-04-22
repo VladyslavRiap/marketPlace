@@ -29,6 +29,12 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
     }
   }, [isAuthenticated, router]);
 
+  useEffect(() => {
+    if (user) {
+      router.push("/profile");
+    }
+  }, [user, router]);
+
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
@@ -90,7 +96,7 @@ const LoginPage = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 
   return (
     <div className="min-h-full flex">
-      <div className="hidden md:flex w-1/2 bg-gray-100 items-center justify-center">
+      <div className="hidden md:flex w-1/2  items-center justify-center">
         <div className="relative w-full h-3/4">
           <Image
             src="/images/auth-side-image.avif"

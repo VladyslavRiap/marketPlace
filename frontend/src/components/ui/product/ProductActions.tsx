@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Minus, Plus, ShoppingCart, Heart, Truck, Undo2 } from "lucide-react";
 import Button from "@/components/Button";
+import { useAppSelector } from "@/redux/hooks";
 
 interface ProductActionsProps {
   isInCart: boolean;
@@ -23,16 +24,17 @@ export const ProductActions = ({
   userRole,
 }: ProductActionsProps) => {
   const [quantity, setQuantity] = useState(1);
-
+  const user = useAppSelector((state) => state.auth.user);
   const increaseQuantity = () => setQuantity((prev) => Math.min(prev + 1, 99));
   const decreaseQuantity = () => setQuantity((prev) => Math.max(prev - 1, 1));
 
   const isSeller = userRole === "seller" || null;
+  const showButtons = user && !isSeller;
 
   return (
     <>
       <div className="flex lg:flex-row flex-col items-center gap-4">
-        {!isSeller && (
+        {showButtons && (
           <div className="flex items-center">
             <button
               onClick={decreaseQuantity}
@@ -52,7 +54,7 @@ export const ProductActions = ({
           </div>
         )}
         <div className="gap-8 flex">
-          {!isSeller && (
+          {showButtons && (
             <Button
               onClick={onAddToCart}
               variant={isInCart ? "primary" : "secondary"}
@@ -63,14 +65,16 @@ export const ProductActions = ({
               {isInCart ? "In cart" : "Buy now"}
             </Button>
           )}
-          <Button
-            onClick={onFavoriteToggle}
-            variant={isFavorite ? "primary" : "secondary"}
-            size="lg"
-            className="rounded-lg py-3.5"
-          >
-            <Heart />
-          </Button>
+          {showButtons && (
+            <Button
+              onClick={onFavoriteToggle}
+              variant={isFavorite ? "primary" : "secondary"}
+              size="lg"
+              className="rounded-lg py-3.5"
+            >
+              <Heart />
+            </Button>
+          )}
         </div>
       </div>
 

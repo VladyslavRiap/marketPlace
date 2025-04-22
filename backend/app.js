@@ -30,13 +30,10 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: [
-      "https://market-place-pl7afnwv1-vladyslavriaps-projects.vercel.app/",
-      "http://localhost:3000",
-    ],
+    origin: "https://victorious-reflection-production.up.railway.app",
     credentials: true,
-    exposedHeaders: ["set-cookie"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   })
 );
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

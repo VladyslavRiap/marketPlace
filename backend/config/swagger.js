@@ -6,9 +6,15 @@ const swaggerOptions = {
     info: {
       title: "Marketplace API",
       version: "1.0.0",
-      description: "API fore marketplace with bucket",
+      description: "API for marketplace with bucket",
     },
-    servers: [{ url: "http://localhost:5000" }],
+    servers: [
+      {
+        url: "https://marketplace-production-9538.up.railway.app",
+        description: "Production server",
+      },
+      { url: "http://localhost:5000", description: "Local development server" },
+    ],
     components: {
       securitySchemes: {
         BearerAuth: {
@@ -22,4 +28,5 @@ const swaggerOptions = {
   },
   apis: ["./routes/*.js"],
 };
+
 module.exports = swaggerJsdoc(swaggerOptions);

@@ -1,4 +1,3 @@
-// components/ui/favorites/FavoritesGrid.tsx
 import { useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
@@ -26,16 +25,19 @@ const FavoritesGrid = ({ initialFavorites }: FavoritesGridProps) => {
   const { showMessage } = useSnackbarContext();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleAddAllToCart = () => {
-    const productIds = favorites.map((product) => product.id);
-    dispatch(addMultipleToCart(productIds))
-      .unwrap()
-      .then(() => {
-        showMessage("All items added to cart", "success");
-      })
-      .catch((err) => {
-        showMessage(err || "Error adding items to cart", "error");
-      });
+  const handleAddAllToCart = async () => {
+    try {
+      for (const product of favorites) {
+        try {
+          await dispatch(addToCart(product.id)).unwrap();
+        } catch (err) {
+          console.log(`Item ${product.id} already in cart`);
+        }
+      }
+      showMessage("Items added to cart", "success");
+    } catch (err: any) {
+      showMessage(err || "Error adding items to cart", "error");
+    }
   };
 
   useEffect(() => {

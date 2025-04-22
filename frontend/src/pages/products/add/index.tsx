@@ -84,7 +84,7 @@ const AddProductPage = () => {
                 Fill in the basic product information
               </p>
             </div>
-            <div className="bg-blue-50 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+            <div className="bg-blue-50 text-[#DB4444] px-3 py-1 rounded-full text-sm font-medium">
               Step 1 of 2
             </div>
           </div>

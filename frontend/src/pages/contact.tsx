@@ -28,13 +28,13 @@ const ContactPage: React.FC<ContactPageProps> = ({ initialCategories }) => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <Head>
         <title>Contact Us</title>
         <meta name="description" content="Contact our support team 24/7" />
       </Head>
 
-      <div className="bg-white py-4 border-b">
+      <div className="bg-gray-50 py-4 border-b">
         <div className="container mx-auto px-4">
           <div className="flex items-center text-sm text-gray-600">
             <Link href="/" className="flex items-center hover:text-[#DB4444]">
@@ -103,7 +103,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ initialCategories }) => {
             </div>
           </div>
 
-          <div className="md:col-span-2 bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+          <div className="md:col-span-2 bg-gray-50 p-8 rounded-lg shadow-sm border border-gray-100">
             <form className="space-y-6">
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="relative">
@@ -119,7 +119,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ initialCategories }) => {
                   <input
                     type="text"
                     required
-                    className="w-full px-0 py-2 border-0 border-b border-gray-300 rounded-none focus:ring-0 focus:border-[#DB4444] focus:outline-none"
+                    className="w-full px-0 py-2 border-0 border-b bg-gray-50 border-gray-300 rounded-none focus:ring-0 focus:border-[#DB4444] focus:outline-none"
                     onFocus={() => handleFocus("name")}
                     onBlur={(e) => handleBlur("name", e.target.value)}
                   />
@@ -137,7 +137,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ initialCategories }) => {
                   <input
                     type="email"
                     required
-                    className="w-full px-0 py-2 border-0 border-b border-gray-300 rounded-none focus:ring-0 focus:border-[#DB4444] focus:outline-none"
+                    className="w-full px-0 py-2 border-0 border-b bg-gray-50 border-gray-300 rounded-none focus:ring-0 focus:border-[#DB4444] focus:outline-none"
                     onFocus={() => handleFocus("email")}
                     onBlur={(e) => handleBlur("email", e.target.value)}
                   />
@@ -155,7 +155,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ initialCategories }) => {
                   <input
                     type="tel"
                     required
-                    className="w-full px-0 py-2 border-0 border-b border-gray-300 rounded-none focus:ring-0 focus:border-[#DB4444] focus:outline-none"
+                    className="w-full px-0 py-2 border-0 border-b border-gray-300 bg-gray-50 rounded-none focus:ring-0 focus:border-[#DB4444] focus:outline-none"
                     onFocus={() => handleFocus("phone")}
                     onBlur={(e) => handleBlur("phone", e.target.value)}
                   />
@@ -173,7 +173,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ initialCategories }) => {
                 </label>
                 <textarea
                   rows={5}
-                  className="w-full px-0 py-2 border-0 border-b border-gray-300 rounded-none focus:ring-0 focus:border-[#DB4444] focus:outline-none resize-none"
+                  className="w-full px-0 py-2 border-0 border-b bg-gray-50 border-gray-300 rounded-none focus:ring-0 focus:border-[#DB4444] focus:outline-none resize-none"
                   onFocus={() => handleFocus("message")}
                   onBlur={(e) => handleBlur("message", e.target.value)}
                 />
